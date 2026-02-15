@@ -1,0 +1,224 @@
+.form {
+  --form-bg: #1a5fb4;
+  --form-bg-hover: #2563c4;
+  --input-bg: #f8f4f4;
+  --input-focus: #e8e4e4;
+  --btn-bg: linear-gradient(135deg, #001153 0%, #010247 100%);
+  --radius: 12px;
+  --radius-input: 24px;
+
+  background: var(--form-bg);
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  color: #fff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.empresa img {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.titulo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Emergencias - solo en pantalla */
+.emer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+  font-size: 0.75rem;
+  opacity: 0.95;
+  margin-bottom: 0.5rem;
+}
+
+.emer p {
+  margin: 0;
+}
+
+/* Inputs sueltos */
+.form input,
+.form textarea {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-input);
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  background-color: var(--input-bg);
+  color: #1a1a1a;
+  font-family: inherit;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.form input::placeholder,
+.form textarea::placeholder {
+  color: #666;
+}
+
+.form input:focus,
+.form textarea:focus {
+  background-color: var(--input-focus);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+/* Fila label + input */
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.fila label {
+  min-width: 180px;
+  font-size: 0.9rem;
+  text-align: right;
+  opacity: 0.95;
+}
+
+.fila input {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* Observaciones */
+.observaciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.observaciones label {
+  font-size: 0.9rem;
+  opacity: 0.95;
+}
+
+.observaciones textarea {
+  border-radius: var(--radius);
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Vitales */
+.vitales {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Botón imprimir */
+.btnPrint {
+  margin: 1rem auto 0;
+  padding: 0.9rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: var(--btn-bg);
+  color: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+  align-self: center;
+}
+
+.btnPrint:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btnPrint:active {
+  transform: translateY(0);
+}
+
+/* Ocultar al imprimir (clase dinámica) */
+.print-hide {
+  display: none !important;
+}
+
+/* ========== PRINT ========== */
+@media print {
+  .print-hide {
+    display: none !important;
+  }
+
+  body {
+    margin: 0;
+    background: #fff;
+  }
+
+  .emer {
+    display: none !important;
+  }
+
+  .form {
+    max-width: 100%;
+    margin: 0;
+    padding: 1rem;
+    box-shadow: none;
+    border-radius: 0;
+    background: #fff;
+    color: #000;
+  }
+
+  .form input,
+  .form textarea {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    border-radius: 0;
+    padding: 0.25rem 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .btnPrint {
+    display: none !important;
+  }
+
+  .vitales,
+  .observaciones {
+    page-break-inside: avoid;
+  }
+
+  .empresa img {
+    border-color: #ccc;
+  }
+
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+}

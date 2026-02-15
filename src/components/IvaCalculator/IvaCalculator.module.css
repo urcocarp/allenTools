@@ -1,0 +1,129 @@
+.wrapper {
+  max-width: 480px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #1a1a1a;
+}
+
+.titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #001153;
+}
+
+.subtitulo {
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+  color: #444;
+  line-height: 1.5;
+}
+
+.alicuota {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.alicuotaLabel {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.radioLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.radioLabel input {
+  accent-color: #1a5fb4;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.inputGroup label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.inputGroup input {
+  padding: 0.85rem 1rem;
+  font-size: 1.1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.inputGroup input:focus {
+  border-color: #1a5fb4;
+  box-shadow: 0 0 0 3px rgba(26, 95, 180, 0.15);
+}
+
+.resultados {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: #f5f7fa;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.filaResultado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.filaResultado strong {
+  font-size: 1.05rem;
+  color: #001153;
+}
+
+.ivaContenido {
+  font-size: 1.2rem !important;
+  color: #0d5c2e !important;
+}
+
+.ok {
+  color: #0d5c2e !important;
+}
+
+.warn {
+  color: #b45309 !important;
+}
+
+.transparencia {
+  padding: 1rem;
+  background: #e8f4ec;
+  border: 1px solid #b8ddc4;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.transparencia p {
+  margin: 0.35rem 0;
+}
+
+.ivaContenidoLinea {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #0d5c2e;
+}
