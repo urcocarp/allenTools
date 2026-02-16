@@ -15,7 +15,7 @@ function App() {
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <h1 className={styles.titulo}>AllenTools</h1>
+        <h1 className={styles.titulo}>#AllenTools</h1>
         <nav className={styles.nav}>
           {HERRAMIENTAS.map(({ id, label }) => (
             <button
