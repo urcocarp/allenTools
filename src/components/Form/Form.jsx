@@ -10,6 +10,8 @@ const Form = () => {
     if (!form) return;
 
     form.querySelectorAll('input, textarea').forEach((el) => {
+      const type = el.getAttribute('type');
+      if (type === 'checkbox' || type === 'radio') return;
       if (!el.value.trim()) {
         el.classList.add(styles['print-hide']);
       }
@@ -17,7 +19,13 @@ const Form = () => {
 
     form.querySelectorAll(`.${styles.fila}`).forEach((fila) => {
       const inputs = fila.querySelectorAll('input, textarea');
-      const hasValue = [...inputs].some((i) => i.value.trim());
+      const hasValue = [...inputs].some((i) => {
+        const type = i.getAttribute('type');
+        if (type === 'checkbox' || type === 'radio') {
+          return i.checked;
+        }
+        return i.value.trim();
+      });
       if (!hasValue) {
         fila.classList.add(styles['print-hide']);
       }
@@ -25,7 +33,13 @@ const Form = () => {
 
     form.querySelectorAll(`.${styles.vitales}`).forEach((bloque) => {
       const inputs = bloque.querySelectorAll('input, textarea');
-      const hasValue = [...inputs].some((i) => i.value.trim());
+      const hasValue = [...inputs].some((i) => {
+        const type = i.getAttribute('type');
+        if (type === 'checkbox' || type === 'radio') {
+          return i.checked;
+        }
+        return i.value.trim();
+      });
       if (!hasValue) {
         bloque.classList.add(styles['print-hide']);
       }
@@ -108,6 +122,32 @@ const Form = () => {
         <div className={styles.fila}>
           <label>Temperatura</label>
           <input type="text" />
+        </div>
+        <div className={styles.filaBoolean}>
+          <label>¿se traslada con tubo de oxígeno?</label>
+          <div className={styles.booleanGroup}>
+            <label className={styles.booleanOption}>
+              <input type="radio" name="tuboOxigeno" value="si" />
+              Sí
+            </label>
+            <label className={styles.booleanOption}>
+              <input type="radio" name="tuboOxigeno" value="no" />
+              No
+            </label>
+          </div>
+        </div>
+        <div className={styles.filaBoolean}>
+          <label>¿Se traslada con cuerpo médico?</label>
+          <div className={styles.booleanGroup}>
+            <label className={styles.booleanOption}>
+              <input type="radio" name="trasladoMedico" value="si" />
+              Sí
+            </label>
+            <label className={styles.booleanOption}>
+              <input type="radio" name="trasladoMedico" value="no" />
+              No
+            </label>
+          </div>
         </div>
       </div>
 
