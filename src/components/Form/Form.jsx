@@ -4,10 +4,20 @@ import logo from '../../assets/allende.jpg';
 
 const Form = () => {
   const formRef = useRef(null);
+  const timestampRef = useRef(null);
 
   const handlePrint = () => {
     const form = formRef.current;
     if (!form) return;
+
+    const now = new Date().toLocaleString('es-AR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+
+    if (timestampRef.current) {
+      timestampRef.current.textContent = `Fecha y hora de impresión: ${now}`;
+    }
 
     form.querySelectorAll('input, textarea').forEach((el) => {
       const type = el.getAttribute('type');
@@ -68,7 +78,10 @@ const Form = () => {
         <div className={styles.empresa}>
           <img src={logo} alt="Sanatorio Allende" />
         </div>
-        <p className={styles.titulo}>DERIVACIONES SANATORIO ALLENDE</p>
+        <div>
+          <p className={styles.titulo}>DERIVACIONES SANATORIO ALLENDE</p>
+          <p className={styles.timestamp} ref={timestampRef} />
+        </div>
       </div>
       <div className={styles.emer}>
         <p>SUP ENF: 60700/3175</p>

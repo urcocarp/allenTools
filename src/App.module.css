@@ -2,6 +2,10 @@
   min-height: 100vh;
   background: linear-gradient(180deg, #e8eef5 0%, #dde5f0 100%);
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-image: url('./assets/allenFondo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .header {
