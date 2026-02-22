@@ -1,10 +1,12 @@
 # Desplegar AllenTools (gratis)
 
-El proyecto ya está listo para deploy. Opciones recomendadas:
+El **frontend** (formulario, tabla, calculadora IVA) se despliega solo. Los registros se guardan en **localStorage** del navegador, así que sin backend la app funciona igual.
 
 ---
 
-## Opción 1: Vercel (recomendada)
+## Frontend (obligatorio)
+
+### Opción 1: Vercel (recomendada)
 
 1. **Subí el proyecto a GitHub** (si aún no está):
    ```bash
@@ -61,3 +63,22 @@ Seguí los pasos (login si hace falta). Te da una URL al finalizar.
 | **Vercel CLI** | Sin GitHub, desde tu PC  | `*.vercel.app`                |
 
 Cualquier opción es gratuita para este proyecto.
+
+---
+
+## Backend opcional (guardar registros en servidor)
+
+Si querés que los registros también se guarden en un servidor (y no solo en localStorage), desplegá el backend por separado:
+
+1. **Railway** o **Render**: subí la carpeta `server/` como proyecto Node.
+   - **Build:** no hace falta (o `npm install`).
+   - **Start:** `npm start` (o `node index.js`).
+   - En Railway/Render te dan una URL tipo `https://tu-api.railway.app` o `https://tu-api.onrender.com`.
+
+2. En el **frontend** (Vercel/Netlify), agregá una variable de entorno:
+   - **Nombre:** `VITE_API_URL`
+   - **Valor:** la URL de tu backend (ej. `https://tu-api.onrender.com`).
+
+3. Redeploy del frontend para que tome la variable. A partir de ahí, cada registro se envía también al servidor.
+
+Si no desplegás backend, la app sigue funcionando solo con localStorage.

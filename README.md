@@ -1,4 +1,15 @@
-# React + Vite
+# #AllenTools
+
+Herramientas internas: formulario de derivaciones (Sanatorio Allende) y calculadora IVA.
+
+## Desarrollo
+
+- **Frontend:** `npm run dev` (Vite).
+- **Backend (opcional):** para guardar registros en servidor, en otra terminal: `cd server && npm install && npm run dev`. Crea un archivo `.env` con `VITE_API_URL=http://localhost:3001` para que el frontend envíe cada registro al API.
+
+Los registros se guardan siempre en **localStorage** en el navegador. Si configurás `VITE_API_URL`, además se envían al servidor (archivo `server/data/registros.json`).
+
+---
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

@@ -1,0 +1,133 @@
+.wrapper {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.vacio {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+  margin: 0;
+}
+
+.btnClear {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  border: 1px solid #c62828;
+  background: #fff;
+  color: #c62828;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btnClear:hover {
+  background: #c62828;
+  color: #fff;
+}
+
+.scroll {
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 0.9rem;
+}
+
+.tabla th,
+.tabla td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.tabla th {
+  background: #1a5fb4;
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tabla tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.filaDetalle td {
+  background: #f0f4f8;
+  border-bottom: 1px solid #e0e4e8;
+  padding: 0.5rem 1rem;
+  vertical-align: top;
+}
+
+.detalle {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.detalle p {
+  margin: 0.25rem 0;
+}
+
+.btnVer {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #1a5fb4;
+  background: #fff;
+  color: #1a5fb4;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnVer:hover {
+  background: #1a5fb4;
+  color: #fff;
+}
+
+.celdasAcciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btnEliminar {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #c62828;
+  background: #fff;
+  color: #c62828;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnEliminar:hover {
+  background: #c62828;
+  color: #fff;
+}

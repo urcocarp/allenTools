@@ -2,7 +2,34 @@ import styles from './Form.module.css';
 import { useRef } from 'react';
 import logo from '../../assets/allende.jpg';
 
-const Form = () => {
+const getFormData = (form) => {
+  if (!form) return null;
+  const fd = new FormData(form);
+  const get = (k) => (fd.get(k) ?? '').toString().trim();
+  const getRadio = (name) => form.querySelector(`input[name="${name}"]:checked`)?.value ?? '';
+  return {
+    apellidoNombres: get('apellidoNombres'),
+    documento: get('documento'),
+    lugar: get('lugar'),
+    edad: get('edad'),
+    telefono: get('telefono'),
+    obraSocial: get('obraSocial'),
+    plan: get('plan'),
+    diagnostico: get('diagnostico'),
+    politraumatismo: get('politraumatismo'),
+    observaciones: get('observaciones'),
+    fc: get('fc'),
+    fr: get('fr'),
+    glasgow: get('glasgow'),
+    sat: get('sat'),
+    ta: get('ta'),
+    temperatura: get('temperatura'),
+    tuboOxigeno: getRadio('tuboOxigeno'),
+    trasladoMedico: getRadio('trasladoMedico'),
+  };
+};
+
+const Form = ({ onGuardar }) => {
   const formRef = useRef(null);
   const timestampRef = useRef(null);
 
@@ -68,6 +95,15 @@ const Form = () => {
       form
         .querySelectorAll(`.${styles['print-hide']}`)
         .forEach((el) => el.classList.remove(styles['print-hide']));
+      const data = getFormData(form);
+      if (data?.apellidoNombres) {
+        const registro = {
+          id: crypto.randomUUID(),
+          ...data,
+          createdAt: new Date().toISOString(),
+        };
+        onGuardar?.(registro);
+      }
       form.reset();
     }, 500);
   };
@@ -89,23 +125,24 @@ const Form = () => {
         <p>UCO: 3178/3179</p>
       </div>
 
-      <input type="text" placeholder="Apellido y nombres" />
-      <input type="text" placeholder="Documento" />
-      <input type="text" placeholder="Lugar de donde proviene" />
-      <input type="text" placeholder="Edad" />
-      <input type="text" placeholder="Teléfono" />
-      <input type="text" placeholder="Obra social" />
-      <input type="text" placeholder="Plan" />
-      <input type="text" placeholder="Diagnóstico" />
+      <input type="text" name="apellidoNombres" placeholder="Apellido y nombres" />
+      <input type="text" name="documento" placeholder="Documento" />
+      <input type="text" name="lugar" placeholder="Lugar de donde proviene" />
+      <input type="text" name="edad" placeholder="Edad" />
+      <input type="text" name="telefono" placeholder="Teléfono" />
+      <input type="text" name="obraSocial" placeholder="Obra social" />
+      <input type="text" name="plan" placeholder="Plan" />
+      <input type="text" name="diagnostico" placeholder="Diagnóstico" />
 
       <div className={styles.fila}>
         <label>¿Es politraumatismo?</label>
-        <input type="text" placeholder="¿Por qué?" />
+        <input type="text" name="politraumatismo" placeholder="¿Por qué?" />
       </div>
 
       <div className={styles.observaciones}>
         <label>Observaciones</label>
         <textarea
+          name="observaciones"
           placeholder="Escriba aquí las observaciones del paciente..."
           rows={4}
         />
@@ -114,27 +151,27 @@ const Form = () => {
       <div className={styles.vitales}>
         <div className={styles.fila}>
           <label>Frecuencia cardiaca</label>
-          <input type="text" />
+          <input type="text" name="fc" />
         </div>
         <div className={styles.fila}>
           <label>Frecuencia respiratoria</label>
-          <input type="text" />
+          <input type="text" name="fr" />
         </div>
         <div className={styles.fila}>
           <label>Glasgow</label>
-          <input type="text" />
+          <input type="text" name="glasgow" />
         </div>
         <div className={styles.fila}>
           <label>SAT</label>
-          <input type="text" />
+          <input type="text" name="sat" />
         </div>
         <div className={styles.fila}>
           <label>TA</label>
-          <input type="text" />
+          <input type="text" name="ta" />
         </div>
         <div className={styles.fila}>
           <label>Temperatura</label>
-          <input type="text" />
+          <input type="text" name="temperatura" />
         </div>
         <div className={styles.filaBoolean}>
           <label>¿se traslada con tubo de oxígeno?</label>
