@@ -9,7 +9,7 @@ const STORAGE_KEY = 'allentools-derivaciones';
 
 const HERRAMIENTAS = [
   { id: 'derivacion', label: 'Formulario derivación', Component: Form },
-  { id: 'tabla', label: 'Tabla de registros', Component: null },
+  { id: 'tabla', label: 'Derivaciones', Component: null },
   { id: 'iva', label: 'Calculadora IVA', Component: IvaCalculator },
 ];
 

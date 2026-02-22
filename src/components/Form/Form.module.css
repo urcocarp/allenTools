@@ -149,7 +149,7 @@
   padding: 0;
 }
 
-/* Observaciones */
+
 .observaciones {
   display: flex;
   flex-direction: column;
@@ -167,7 +167,6 @@
   min-height: 80px;
 }
 
-/* Vitales */
 .vitales {
   display: flex;
   flex-direction: column;
@@ -178,7 +177,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* Botón imprimir */
+
 .btnPrint {
   margin: 1rem auto 0;
   padding: 0.9rem 2rem;
@@ -202,12 +201,12 @@
   transform: translateY(0);
 }
 
-/* Ocultar al imprimir (clase dinámica) */
+
 .print-hide {
   display: none !important;
 }
 
-/* ========== PRINT ========== */
+
 @media print {
   .print-hide {
     display: none !important;

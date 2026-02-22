@@ -174,7 +174,7 @@ const Form = ({ onGuardar }) => {
           <input type="text" name="temperatura" />
         </div>
         <div className={styles.filaBoolean}>
-          <label>¿se traslada con tubo de oxígeno?</label>
+          <label>¿Se traslada con tubo de oxígeno?</label>
           <div className={styles.booleanGroup}>
             <label className={styles.booleanOption}>
               <input type="radio" name="tuboOxigeno" value="si" />
