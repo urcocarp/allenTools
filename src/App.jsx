@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import Form from './components/Form/Form';
 import IvaCalculator from './components/IvaCalculator/IvaCalculator';
 import TablaRegistros from './components/TablaRegistros/TablaRegistros';
-import { saveRegistro } from './api/registros';
+import { saveRegistro, loadRegistros } from './api/registros';
 import styles from './App.module.css';
+import logo from './assets/allende.jpg';
 
 const STORAGE_KEY = 'allentools-derivaciones';
 
@@ -15,6 +16,7 @@ const HERRAMIENTAS = [
 
 function App() {
   const [activa, setActiva] = useState('derivacion');
+  const [registroParaImprimir, setRegistroParaImprimir] = useState(null);
   const [registros, setRegistros] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -25,6 +27,39 @@ function App() {
     } catch (_) {}
     return [];
   });
+
+  const navigate = (id) => {
+    setActiva(id);
+    window.location.hash = `#${id}`;
+  };
+
+  // Navegación por hash (#derivacion, #tabla, #iva)
+  useEffect(() => {
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      const existe = HERRAMIENTAS.some((h) => h.id === hash);
+      if (existe) setActiva(hash);
+    };
+
+    syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
+  }, []);
+
+  // Si hay backend configurado, sincronizar registros desde la API al cargar
+  useEffect(() => {
+    let cancelado = false;
+    const sync = async () => {
+      const desdeApi = await loadRegistros();
+      if (!cancelado && Array.isArray(desdeApi) && desdeApi.length > 0) {
+        setRegistros(desdeApi);
+      }
+    };
+    sync();
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -50,26 +85,58 @@ function App() {
   const herramienta = HERRAMIENTAS.find((h) => h.id === activa) ?? HERRAMIENTAS[0];
   const { Component } = herramienta;
 
+  const handlePrintDesdeTabla = (registro) => {
+    setRegistroParaImprimir(registro);
+    navigate('derivacion');
+  };
+
   const renderMain = () => {
-    if (activa === 'derivacion') return <Form onGuardar={onGuardar} />;
-    if (activa === 'tabla') return <TablaRegistros registros={registros} onClear={onClearRegistros} onDelete={onDeleteRegistro} />;
+    if (activa === 'derivacion') {
+      return (
+        <Form
+          onGuardar={onGuardar}
+          registroParaImprimir={registroParaImprimir}
+          modoReimpresion={Boolean(registroParaImprimir)}
+          onImpresionCompleta={() => {
+            setRegistroParaImprimir(null);
+            navigate('tabla');
+          }}
+        />
+      );
+    }
+    if (activa === 'tabla') {
+      return (
+        <TablaRegistros
+          registros={registros}
+          onClear={onClearRegistros}
+          onDelete={onDeleteRegistro}
+          onPrint={handlePrintDesdeTabla}
+        />
+      );
+    }
     return Component ? <Component /> : null;
   };
 
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <h1 className={styles.titulo}>#AllenTools</h1>
+        <div className={styles.brand}>
+          <img src={logo} alt="Sanatorio Allende" className={styles.brandLogo} />
+          <h1 className={styles.titulo}>#AllenTools</h1>
+        </div>
         <nav className={styles.nav}>
           {HERRAMIENTAS.map(({ id, label }) => (
-            <button
+            <a
               key={id}
-              type="button"
+              href={`#${id}`}
               className={activa === id ? styles.navBtnActivo : styles.navBtn}
-              onClick={() => setActiva(id)}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate(id);
+              }}
             >
               {label}
-            </button>
+            </a>
           ))}
         </nav>
       </header>

@@ -108,6 +108,17 @@
   flex-wrap: wrap;
 }
 
+.filaRecibe {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filaRecibe .fila {
+  flex: 1;
+  min-width: 280px;
+}
+
 .filaBoolean {
   display: flex;
   align-items: center;

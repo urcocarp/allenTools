@@ -6,10 +6,10 @@
 
 .header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.25rem;
   margin-bottom: 1rem;
 }
 
@@ -18,6 +18,74 @@
   font-size: 1.25rem;
   font-weight: 600;
   color: #1a1a1a;
+}
+
+.subtitulo {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.headerMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.busquedaBox {
+  min-width: 220px;
+}
+
+.inputBusqueda {
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #c3c9d4;
+  font-size: 0.9rem;
+}
+
+.inputBusqueda:focus {
+  outline: none;
+  border-color: #1a5fb4;
+  box-shadow: 0 0 0 1px rgba(26, 95, 180, 0.25);
+}
+
+.filtrosFecha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.filtroFecha,
+.filtroFechaActivo {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.filtroFecha {
+  background: #eef2f7;
+  color: #1a1a1a;
+}
+
+.filtroFecha:hover {
+  background: #dde5f0;
+}
+
+.filtroFechaActivo {
+  background: #1a5fb4;
+  color: #fff;
+  border-color: #1a5fb4;
 }
 
 .vacio {
@@ -129,5 +197,21 @@
 
 .btnEliminar:hover {
   background: #c62828;
+  color: #fff;
+}
+
+.btnImprimir {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #4caf50;
+  background: #fff;
+  color: #2e7d32;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnImprimir:hover {
+  background: #4caf50;
   color: #fff;
 }

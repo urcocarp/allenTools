@@ -1,5 +1,5 @@
 import styles from './Form.module.css';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import logo from '../../assets/allende.jpg';
 
 const getFormData = (form) => {
@@ -17,6 +17,8 @@ const getFormData = (form) => {
     plan: get('plan'),
     diagnostico: get('diagnostico'),
     politraumatismo: get('politraumatismo'),
+    profesionalRecibe: get('profesionalRecibe'),
+    cedeRecibe: get('cedeRecibe'),
     observaciones: get('observaciones'),
     fc: get('fc'),
     fr: get('fr'),
@@ -29,9 +31,10 @@ const getFormData = (form) => {
   };
 };
 
-const Form = ({ onGuardar }) => {
+const Form = ({ onGuardar, registroParaImprimir, modoReimpresion = false, onImpresionCompleta }) => {
   const formRef = useRef(null);
   const timestampRef = useRef(null);
+  const yaImprimioRef = useRef(false);
 
   const handlePrint = () => {
     const form = formRef.current;
@@ -95,18 +98,69 @@ const Form = ({ onGuardar }) => {
       form
         .querySelectorAll(`.${styles['print-hide']}`)
         .forEach((el) => el.classList.remove(styles['print-hide']));
-      const data = getFormData(form);
-      if (data?.apellidoNombres) {
-        const registro = {
-          id: crypto.randomUUID(),
-          ...data,
-          createdAt: new Date().toISOString(),
-        };
-        onGuardar?.(registro);
+      if (!modoReimpresion) {
+        const data = getFormData(form);
+        if (data?.apellidoNombres) {
+          const registro = {
+            id: crypto.randomUUID(),
+            ...data,
+            createdAt: new Date().toISOString(),
+          };
+          onGuardar?.(registro);
+        }
       }
       form.reset();
+      if (modoReimpresion && onImpresionCompleta) {
+        onImpresionCompleta();
+      }
     }, 500);
   };
+
+  // Rellenar e imprimir automáticamente cuando viene desde la tabla (reimpresión)
+  useEffect(() => {
+    if (!registroParaImprimir || yaImprimioRef.current) return;
+    const form = formRef.current;
+    if (!form) return;
+
+    const setValue = (name, value) => {
+      if (value == null) return;
+      const el = form.elements.namedItem(name);
+      if (!el) return;
+      if (el instanceof RadioNodeList || Array.isArray(el)) {
+        const radios = form.querySelectorAll(`input[name="${name}"]`);
+        radios.forEach((r) => {
+          // eslint-disable-next-line no-param-reassign
+          r.checked = r.value === String(value);
+        });
+      } else {
+        el.value = String(value);
+      }
+    };
+
+    setValue('apellidoNombres', registroParaImprimir.apellidoNombres);
+    setValue('documento', registroParaImprimir.documento);
+    setValue('lugar', registroParaImprimir.lugar);
+    setValue('edad', registroParaImprimir.edad);
+    setValue('telefono', registroParaImprimir.telefono);
+    setValue('obraSocial', registroParaImprimir.obraSocial);
+    setValue('plan', registroParaImprimir.plan);
+    setValue('diagnostico', registroParaImprimir.diagnostico);
+    setValue('politraumatismo', registroParaImprimir.politraumatismo);
+    setValue('profesionalRecibe', registroParaImprimir.profesionalRecibe);
+    setValue('cedeRecibe', registroParaImprimir.cedeRecibe);
+    setValue('observaciones', registroParaImprimir.observaciones);
+    setValue('fc', registroParaImprimir.fc);
+    setValue('fr', registroParaImprimir.fr);
+    setValue('glasgow', registroParaImprimir.glasgow);
+    setValue('sat', registroParaImprimir.sat);
+    setValue('ta', registroParaImprimir.ta);
+    setValue('temperatura', registroParaImprimir.temperatura);
+    setValue('tuboOxigeno', registroParaImprimir.tuboOxigeno);
+    setValue('trasladoMedico', registroParaImprimir.trasladoMedico);
+
+    yaImprimioRef.current = true;
+    handlePrint();
+  }, [registroParaImprimir]);
 
   return (
     <form className={styles.form} ref={formRef}>
@@ -198,6 +252,23 @@ const Form = ({ onGuardar }) => {
               No
             </label>
           </div>
+        </div>
+      </div>
+
+      <div className={styles.filaRecibe}>
+        <div className={styles.fila}>
+          <label>Profesional que recibe</label>
+          <input
+            type="text"
+            name="profesionalRecibe"
+          />
+        </div>
+        <div className={styles.fila}>
+          <label>Cede que se recibe</label>
+          <input
+            type="text"
+            name="cedeRecibe"
+          />
         </div>
       </div>
 
