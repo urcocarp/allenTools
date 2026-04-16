@@ -7,6 +7,7 @@ import styles from './App.module.css';
 import logo from './assets/allende.jpg';
 
 const STORAGE_KEY = 'allentools-derivaciones';
+const STORAGE_RECHAZADAS_KEY = 'allentools-derivaciones-rechazadas';
 
 const HERRAMIENTAS = [
   { id: 'derivacion', label: 'Formulario derivación', Component: Form },
@@ -20,6 +21,16 @@ function App() {
   const [registros, setRegistros] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        return Array.isArray(data) ? data : [];
+      }
+    } catch (_) {}
+    return [];
+  });
+  const [rechazadas, setRechazadas] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_RECHAZADAS_KEY);
       if (raw) {
         const data = JSON.parse(raw);
         return Array.isArray(data) ? data : [];
@@ -67,6 +78,12 @@ function App() {
     } catch (_) {}
   }, [registros]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_RECHAZADAS_KEY, JSON.stringify(rechazadas));
+    } catch (_) {}
+  }, [rechazadas]);
+
   const onGuardar = (registro) => {
     setRegistros((prev) => [...prev, registro]);
     saveRegistro(registro);
@@ -79,7 +96,16 @@ function App() {
   };
 
   const onDeleteRegistro = (id) => {
-    setRegistros((prev) => prev.filter((r) => r.id !== id));
+    setRegistros((prev) => {
+      const registro = prev.find((r) => r.id === id);
+      if (registro) {
+        setRechazadas((prevRech) => [
+          ...prevRech,
+          { ...registro, rechazadoAt: new Date().toISOString() },
+        ]);
+      }
+      return prev.filter((r) => r.id !== id);
+    });
   };
 
   const herramienta = HERRAMIENTAS.find((h) => h.id === activa) ?? HERRAMIENTAS[0];
@@ -108,6 +134,7 @@ function App() {
       return (
         <TablaRegistros
           registros={registros}
+          rechazadas={rechazadas}
           onClear={onClearRegistros}
           onDelete={onDeleteRegistro}
           onPrint={handlePrintDesdeTabla}

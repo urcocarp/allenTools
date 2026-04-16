@@ -1,79 +1,157 @@
 .form {
-  --form-bg: #1a5fb4;
-  --form-bg-hover: #2563c4;
-  --input-bg: #f8f4f4;
-  --input-focus: #e8e4e4;
-  --btn-bg: linear-gradient(135deg, #001153 0%, #010247 100%);
+  --input-bg: #f6f8fc;
+  --input-focus: #eef3fb;
   --radius: 12px;
-  --radius-input: 24px;
+  --radius-input: 10px;
+  --card-border: #dce3ef;
 
-  background: var(--form-bg);
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 2rem;
-  border-radius: var(--radius);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.35rem 0;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  color: #fff;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  gap: 1rem;
+  color: #1b2a4a;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-/* Header */
-.header {
+.pageHeader {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  margin-bottom: 0.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
-.empresa img {
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.4rem;
+  color: #3459aa;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
-.titulo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+.pageTitle {
   margin: 0;
-  text-align: center;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-size: 2rem;
+  color: #1d3f8f;
+}
+
+.pageText {
+  margin: 0.4rem 0 0;
+  color: #617399;
+}
+
+.headerBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.headerBrand img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .timestamp {
-  margin: 0.15rem 0 0;
-  font-size: 0.8rem;
-  opacity: 0.9;
-}
-
-.timestamp:empty {
-  display: none;
-}
-
-/* Emergencias - solo en pantalla */
-.emer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 2rem;
-  font-size: 0.75rem;
-  opacity: 0.95;
-  margin-bottom: 0.5rem;
-}
-
-.emer p {
   margin: 0;
+  font-size: 0.8rem;
+  color: #526795;
 }
 
-/* Inputs sueltos */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1rem;
+  align-items: start;
+}
+
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.rightCol {
+  position: sticky;
+  top: 0.9rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+}
+
+.cardTitle {
+  margin: 0 0 0.9rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #2a3550;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.grid6 {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.vitalItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.vitalItem label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #385293;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+
+.actionCard {
+  background: #1f57ad;
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.actionCard h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.actionCard p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.92rem;
+}
+
+.actionCard .fila {
+  flex-direction: column;
+  align-items: stretch;
+}
+
 .form input,
 .form textarea {
   width: 100%;
@@ -97,10 +175,9 @@
 .form input:focus,
 .form textarea:focus {
   background-color: var(--input-focus);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 2px rgba(56, 82, 147, 0.18);
 }
 
-/* Fila label + input */
 .fila {
   display: flex;
   align-items: center;
@@ -128,10 +205,11 @@
 }
 
 .fila label {
-  min-width: 180px;
-  font-size: 0.9rem;
-  text-align: right;
-  opacity: 0.95;
+  min-width: 170px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  color: #34539a;
+  font-weight: 700;
 }
 
 .fila input {
@@ -139,11 +217,10 @@
   min-width: 140px;
 }
 
-/* Opciones Sí / No */
 .booleanGroup {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.75rem;
   flex-wrap: wrap;
 }
@@ -152,7 +229,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .booleanOption input {
@@ -160,16 +237,18 @@
   padding: 0;
 }
 
-
 .observaciones {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-top: 0.7rem;
 }
 
 .observaciones label {
-  font-size: 0.9rem;
-  opacity: 0.95;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  color: #34539a;
+  font-weight: 700;
 }
 
 .observaciones textarea {
@@ -179,42 +258,65 @@
 }
 
 .vitales {
-  display: flex;
-  flex-direction: column;
   gap: 0.75rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  padding: 1rem;
-  border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 
 .btnPrint {
-  margin: 1rem auto 0;
+  margin: 0.3rem 0 0;
   padding: 0.9rem 2rem;
   font-size: 1rem;
   font-weight: 600;
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  background: var(--btn-bg);
-  color: #fff;
+  background: #fff;
+  color: #1f57ad;
   transition: transform 0.2s, box-shadow 0.2s;
-  align-self: center;
+  width: 100%;
 }
 
 .btnPrint:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .btnPrint:active {
   transform: translateY(0);
 }
 
-
 .print-hide {
   display: none !important;
+}
+
+@media (max-width: 1200px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rightCol {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .grid2,
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fila {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fila label {
+    min-width: auto;
+  }
 }
 
 
@@ -228,7 +330,8 @@
     background: #fff;
   }
 
-  .emer {
+  .pageHeader,
+  .rightCol {
     display: none !important;
   }
 
@@ -242,6 +345,10 @@
     color: #000;
   }
 
+  .layout {
+    display: block;
+  }
+
   .form input,
   .form textarea {
     background: transparent;
@@ -253,17 +360,9 @@
     print-color-adjust: exact;
   }
 
-  .btnPrint {
-    display: none !important;
-  }
-
   .vitales,
   .observaciones {
     page-break-inside: avoid;
-  }
-
-  .empresa img {
-    border-color: #ccc;
   }
 
   @page {

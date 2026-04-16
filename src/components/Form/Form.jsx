@@ -164,117 +164,144 @@ const Form = ({ onGuardar, registroParaImprimir, modoReimpresion = false, onImpr
 
   return (
     <form className={styles.form} ref={formRef}>
-      <div className={styles.header}>
-        <div className={styles.empresa}>
-          <img src={logo} alt="Sanatorio Allende" />
-        </div>
+      <div className={styles.pageHeader}>
         <div>
-          <p className={styles.titulo}>DERIVACIONES SANATORIO ALLENDE</p>
+          <p className={styles.kicker}>Formulario de gestión</p>
+          <h2 className={styles.pageTitle}>Nueva Derivación Médica</h2>
+          <p className={styles.pageText}>
+            Completá el formulario para formalizar el proceso de derivación.
+          </p>
+        </div>
+        <div className={styles.headerBrand}>
+          <img src={logo} alt="Sanatorio Allende" />
           <p className={styles.timestamp} ref={timestampRef} />
         </div>
       </div>
-      <div className={styles.emer}>
-        <p>SUP ENF: 60700/3175</p>
-        <p>UTI: 3125</p>
-        <p>UCO: 3178/3179</p>
+
+      <div className={styles.layout}>
+        <section className={styles.leftCol}>
+          <article className={styles.card}>
+            <h3 className={styles.cardTitle}>Información del Paciente</h3>
+            <div className={styles.grid2}>
+              <input type="text" name="apellidoNombres" placeholder="Apellido y nombres" />
+              <input type="text" name="documento" placeholder="Documento" />
+              <input type="text" name="edad" placeholder="Edad" />
+              <input type="text" name="telefono" placeholder="Teléfono" />
+            </div>
+          </article>
+
+          <article className={styles.card}>
+            <h3 className={styles.cardTitle}>Cobertura</h3>
+            <div className={styles.grid2}>
+              <input type="text" name="obraSocial" placeholder="Obra social" />
+              <input type="text" name="plan" placeholder="Plan" />
+            </div>
+          </article>
+
+          <article className={styles.card}>
+            <h3 className={styles.cardTitle}>Origen y Diagnóstico</h3>
+            <input type="text" name="lugar" placeholder="Lugar de donde proviene" />
+            <input type="text" name="diagnostico" placeholder="Diagnóstico" />
+            <div className={styles.fila}>
+              <label>¿Es politraumatismo?</label>
+              <input type="text" name="politraumatismo" placeholder="¿Por qué?" />
+            </div>
+            <div className={styles.observaciones}>
+              <label>Observaciones</label>
+              <textarea
+                name="observaciones"
+                placeholder="Escriba aquí las observaciones del paciente..."
+                rows={4}
+              />
+            </div>
+          </article>
+
+          <article className={`${styles.card} ${styles.vitales}`}>
+            <h3 className={styles.cardTitle}>Signos Vitales y Traslado</h3>
+            <div className={styles.grid6}>
+              <div className={styles.vitalItem}>
+                <label>FC</label>
+                <input type="text" name="fc" />
+              </div>
+              <div className={styles.vitalItem}>
+                <label>FR</label>
+                <input type="text" name="fr" />
+              </div>
+              <div className={styles.vitalItem}>
+                <label>Glasgow</label>
+                <input type="text" name="glasgow" />
+              </div>
+              <div className={styles.vitalItem}>
+                <label>SAT</label>
+                <input type="text" name="sat" />
+              </div>
+              <div className={styles.vitalItem}>
+                <label>TA</label>
+                <input type="text" name="ta" />
+              </div>
+              <div className={styles.vitalItem}>
+                <label>Temperatura</label>
+                <input type="text" name="temperatura" />
+              </div>
+            </div>
+
+            <div className={styles.row2}>
+              <div className={styles.filaBoolean}>
+                <label>¿Se traslada con tubo de oxígeno?</label>
+                <div className={styles.booleanGroup}>
+                  <label className={styles.booleanOption}>
+                    <input type="radio" name="tuboOxigeno" value="si" />
+                    Sí
+                  </label>
+                  <label className={styles.booleanOption}>
+                    <input type="radio" name="tuboOxigeno" value="no" />
+                    No
+                  </label>
+                </div>
+              </div>
+              <div className={styles.filaBoolean}>
+                <label>¿Se traslada con cuerpo médico?</label>
+                <div className={styles.booleanGroup}>
+                  <label className={styles.booleanOption}>
+                    <input type="radio" name="trasladoMedico" value="si" />
+                    Sí
+                  </label>
+                  <label className={styles.booleanOption}>
+                    <input type="radio" name="trasladoMedico" value="no" />
+                    No
+                  </label>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <aside className={styles.rightCol}>
+          <article className={styles.actionCard}>
+            <h3>Confirmar Acción</h3>
+            <p>Al imprimir esta derivación se guarda automáticamente en el dashboard.</p>
+            <div className={styles.filaRecibe}>
+              <div className={styles.fila}>
+                <label>Profesional que recibe</label>
+                <input
+                  type="text"
+                  name="profesionalRecibe"
+                />
+              </div>
+              <div className={styles.fila}>
+                <label>Cede que se recibe</label>
+                <input
+                  type="text"
+                  name="cedeRecibe"
+                />
+              </div>
+            </div>
+            <button type="button" onClick={handlePrint} className={styles.btnPrint}>
+              Imprimir Derivación
+            </button>
+          </article>
+        </aside>
       </div>
-
-      <input type="text" name="apellidoNombres" placeholder="Apellido y nombres" />
-      <input type="text" name="documento" placeholder="Documento" />
-      <input type="text" name="lugar" placeholder="Lugar de donde proviene" />
-      <input type="text" name="edad" placeholder="Edad" />
-      <input type="text" name="telefono" placeholder="Teléfono" />
-      <input type="text" name="obraSocial" placeholder="Obra social" />
-      <input type="text" name="plan" placeholder="Plan" />
-      <input type="text" name="diagnostico" placeholder="Diagnóstico" />
-
-      <div className={styles.fila}>
-        <label>¿Es politraumatismo?</label>
-        <input type="text" name="politraumatismo" placeholder="¿Por qué?" />
-      </div>
-
-      <div className={styles.observaciones}>
-        <label>Observaciones</label>
-        <textarea
-          name="observaciones"
-          placeholder="Escriba aquí las observaciones del paciente..."
-          rows={4}
-        />
-      </div>
-
-      <div className={styles.vitales}>
-        <div className={styles.fila}>
-          <label>Frecuencia cardiaca</label>
-          <input type="text" name="fc" />
-        </div>
-        <div className={styles.fila}>
-          <label>Frecuencia respiratoria</label>
-          <input type="text" name="fr" />
-        </div>
-        <div className={styles.fila}>
-          <label>Glasgow</label>
-          <input type="text" name="glasgow" />
-        </div>
-        <div className={styles.fila}>
-          <label>SAT</label>
-          <input type="text" name="sat" />
-        </div>
-        <div className={styles.fila}>
-          <label>TA</label>
-          <input type="text" name="ta" />
-        </div>
-        <div className={styles.fila}>
-          <label>Temperatura</label>
-          <input type="text" name="temperatura" />
-        </div>
-        <div className={styles.filaBoolean}>
-          <label>¿Se traslada con tubo de oxígeno?</label>
-          <div className={styles.booleanGroup}>
-            <label className={styles.booleanOption}>
-              <input type="radio" name="tuboOxigeno" value="si" />
-              Sí
-            </label>
-            <label className={styles.booleanOption}>
-              <input type="radio" name="tuboOxigeno" value="no" />
-              No
-            </label>
-          </div>
-        </div>
-        <div className={styles.filaBoolean}>
-          <label>¿Se traslada con cuerpo médico?</label>
-          <div className={styles.booleanGroup}>
-            <label className={styles.booleanOption}>
-              <input type="radio" name="trasladoMedico" value="si" />
-              Sí
-            </label>
-            <label className={styles.booleanOption}>
-              <input type="radio" name="trasladoMedico" value="no" />
-              No
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.filaRecibe}>
-        <div className={styles.fila}>
-          <label>Profesional que recibe</label>
-          <input
-            type="text"
-            name="profesionalRecibe"
-          />
-        </div>
-        <div className={styles.fila}>
-          <label>Cede que se recibe</label>
-          <input
-            type="text"
-            name="cedeRecibe"
-          />
-        </div>
-      </div>
-
-      <button type="button" onClick={handlePrint} className={styles.btnPrint}>
-        Imprimir
-      </button>
     </form>
   );
 };
