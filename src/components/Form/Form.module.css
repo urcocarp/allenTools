@@ -175,7 +175,7 @@
 .form input:focus,
 .form textarea:focus {
   background-color: var(--input-focus);
-  box-shadow: 0 0 0 2px rgba(56, 82, 147, 0.18);
+  box-shadow: 0 0 0 2px rgb(211, 216, 226);
 }
 
 .fila {
@@ -210,6 +210,11 @@
   text-transform: uppercase;
   color: #34539a;
   font-weight: 700;
+}
+
+/* Solo en el panel azul: etiquetas en blanco */
+.actionCard .filaRecibe .fila label {
+  color: #fff;
 }
 
 .fila input {
