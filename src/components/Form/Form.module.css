@@ -95,11 +95,19 @@
   padding: 1.1rem;
 }
 
+.card > input + input {
+  margin-top: 0.6rem;
+}
+
+.card > .fila {
+  margin-top: 0.7rem;
+}
+
 .cardTitle {
   margin: 0 0 0.9rem;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #2a3550;
+  color: #000f34;
 }
 
 .grid2 {
