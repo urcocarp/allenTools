@@ -37,10 +37,47 @@ const getEstado = (r) => {
   return 'activo';
 };
 
-const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint }) => {
+const getRowKey = (seccion, registro, index) =>
+  [
+    seccion,
+    registro?.id ?? 'sin-id',
+    registro?.createdAt ?? 'sin-fecha',
+    registro?.rechazadoAt ?? 'sin-rechazo',
+    registro?.intersedeAt ?? 'sin-intersede',
+    registro?.camaReservadaAt ?? 'sin-cama',
+    index,
+  ].join('-');
+
+const SECCIONES = {
+  intersedes: 'intersedes',
+  rechazadas: 'rechazadas',
+  camas: 'camas',
+};
+const OPCIONES_TRASLADO_INTERSEDE = [
+  { id: '', label: 'Seleccionar traslado' },
+  { id: 'nueva-cordoba-a-cerro', label: 'Nueva Córdoba -> Cerro' },
+  { id: 'cerro-a-nueva-cordoba', label: 'Cerro -> Nueva Córdoba' },
+];
+
+const TablaRegistros = ({
+  registros,
+  rechazadas = [],
+  intersedes = [],
+  camasReservadas = [],
+  onClear,
+  onDelete,
+  onDerivarIntersedes,
+  onReservarCama,
+  onAsignarIntersede,
+  onAsignarCama,
+  onPrint,
+}) => {
   const [expandido, setExpandido] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtroFecha, setFiltroFecha] = useState('hoy');
+  const [seccionActiva, setSeccionActiva] = useState(SECCIONES.intersedes);
+  const [draftIntersedes, setDraftIntersedes] = useState({});
+  const [draftCamas, setDraftCamas] = useState({});
 
   const filtrarLista = (lista) => {
     if (!lista?.length) return [];
@@ -81,15 +118,57 @@ const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint
     () => filtrarLista(rechazadas),
     [rechazadas, busqueda, filtroFecha],
   );
+  const filtradosIntersedes = useMemo(() => {
+    const soloIntersedes = (intersedes ?? []).filter((r) => Boolean(r?.intersedeAt));
+    return filtrarLista(soloIntersedes);
+  }, [intersedes, busqueda, filtroFecha]);
+  const filtradosCamas = useMemo(() => {
+    const soloCamas = (camasReservadas ?? []).filter((r) => Boolean(r?.camaReservadaAt));
+    return filtrarLista(soloCamas);
+  }, [camasReservadas, busqueda, filtroFecha]);
+  const totalIntersedes = useMemo(
+    () => (intersedes ?? []).filter((r) => Boolean(r?.intersedeAt)).length,
+    [intersedes],
+  );
+  const totalCamas = useMemo(
+    () => (camasReservadas ?? []).filter((r) => Boolean(r?.camaReservadaAt)).length,
+    [camasReservadas],
+  );
 
   const stats = useMemo(() => {
-    const intersedes = filtrados.filter((r) => (r.cedeRecibe ?? '').trim()).length;
-    const totalRechazadas = filtradosRechazadas.length;
-    const camasReservadas = filtrados.filter(
-      (r) => r.trasladoMedico === 'si' || r.tuboOxigeno === 'si',
-    ).length;
-    return { intersedes, rechazadas: totalRechazadas, camasReservadas };
-  }, [filtrados, filtradosRechazadas]);
+    return {
+      intersedes: filtradosIntersedes.length,
+      rechazadas: filtradosRechazadas.length,
+      camasReservadas: filtradosCamas.length,
+    };
+  }, [filtradosIntersedes.length, filtradosRechazadas.length, filtradosCamas.length]);
+
+  const renderDetalle = (r) => (
+    <div className={styles.detalle}>
+      <p><strong>Lugar:</strong> {r.lugar || '—'}</p>
+      <p><strong>Plan:</strong> {r.plan || '—'}</p>
+      <p><strong>Politraumatismo:</strong> {r.politraumatismo || '—'}</p>
+      <p><strong>Profesional que recibe:</strong> {r.profesionalRecibe || '—'}</p>
+      <p><strong>Cede que se recibe:</strong> {r.cedeRecibe || '—'}</p>
+      <p><strong>Observaciones:</strong> {r.observaciones || '—'}</p>
+      <p><strong>FC / FR / Glasgow / SAT / TA / Temp:</strong> {[r.fc, r.fr, r.glasgow, r.sat, r.ta, r.temperatura].filter(Boolean).join(' — ') || '—'}</p>
+      <p><strong>Tubo oxígeno:</strong> {r.tuboOxigeno || '—'} · <strong>Cuerpo médico:</strong> {r.trasladoMedico || '—'}</p>
+    </div>
+  );
+
+  const getTituloSeccion = () => {
+    if (seccionActiva === SECCIONES.rechazadas) return 'Rechazadas';
+    if (seccionActiva === SECCIONES.camas) return 'Camas reservadas';
+    return 'Intersedes';
+  };
+
+  const getListaSeccion = () => {
+    if (seccionActiva === SECCIONES.rechazadas) return filtradosRechazadas;
+    if (seccionActiva === SECCIONES.camas) return filtradosCamas;
+    return filtradosIntersedes;
+  };
+
+  const listaActiva = getListaSeccion();
 
   return (
     <section className={styles.wrapper}>
@@ -113,18 +192,30 @@ const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint
       </header>
 
       <div className={styles.stats}>
-        <article className={`${styles.statCard} ${styles.statBlue}`}>
+        <button
+          type="button"
+          className={`${styles.statCard} ${styles.statBlue} ${seccionActiva === SECCIONES.intersedes ? styles.statCardActiva : ''}`}
+          onClick={() => setSeccionActiva(SECCIONES.intersedes)}
+        >
           <p>Intersedes</p>
           <strong>{String(stats.intersedes).padStart(2, '0')}</strong>
-        </article>
-        <article className={`${styles.statCard} ${styles.statSlate}`}>
+        </button>
+        <button
+          type="button"
+          className={`${styles.statCard} ${styles.statSlate} ${seccionActiva === SECCIONES.rechazadas ? styles.statCardActiva : ''}`}
+          onClick={() => setSeccionActiva(SECCIONES.rechazadas)}
+        >
           <p>Rechazadas</p>
           <strong>{String(stats.rechazadas).padStart(2, '0')}</strong>
-        </article>
-        <article className={`${styles.statCard} ${styles.statOrange}`}>
+        </button>
+        <button
+          type="button"
+          className={`${styles.statCard} ${styles.statOrange} ${seccionActiva === SECCIONES.camas ? styles.statCardActiva : ''}`}
+          onClick={() => setSeccionActiva(SECCIONES.camas)}
+        >
           <p>Camas reservadas</p>
           <strong>{String(stats.camasReservadas).padStart(2, '0')}</strong>
-        </article>
+        </button>
       </div>
 
       <section className={styles.listCard}>
@@ -199,6 +290,34 @@ const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint
                         >
                           🖨
                         </button>
+                        {onDerivarIntersedes && (
+                          <button
+                            type="button"
+                            className={`${styles.iconBtn} ${styles.iconIntersede}`}
+                            onClick={() => {
+                              if (window.confirm('¿Enviar este paciente a Intersedes?')) {
+                                onDerivarIntersedes(r.id);
+                              }
+                            }}
+                            title="Derivar a Intersedes"
+                          >
+                            ↗
+                          </button>
+                        )}
+                        {onReservarCama && (
+                          <button
+                            type="button"
+                            className={`${styles.iconBtn} ${styles.iconCama}`}
+                            onClick={() => {
+                              if (window.confirm('¿Enviar este paciente a Camas reservadas?')) {
+                                onReservarCama(r.id);
+                              }
+                            }}
+                            title="Derivar a cama reservada"
+                          >
+                            🛏
+                          </button>
+                        )}
                         {onDelete && (
                           <button
                             type="button"
@@ -216,16 +335,7 @@ const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint
                     {expandido === r.id && (
                       <tr className={styles.filaDetalle}>
                         <td colSpan={7}>
-                          <div className={styles.detalle}>
-                            <p><strong>Lugar:</strong> {r.lugar || '—'}</p>
-                            <p><strong>Plan:</strong> {r.plan || '—'}</p>
-                            <p><strong>Politraumatismo:</strong> {r.politraumatismo || '—'}</p>
-                            <p><strong>Profesional que recibe:</strong> {r.profesionalRecibe || '—'}</p>
-                            <p><strong>Cede que se recibe:</strong> {r.cedeRecibe || '—'}</p>
-                            <p><strong>Observaciones:</strong> {r.observaciones || '—'}</p>
-                            <p><strong>FC / FR / Glasgow / SAT / TA / Temp:</strong> {[r.fc, r.fr, r.glasgow, r.sat, r.ta, r.temperatura].filter(Boolean).join(' — ') || '—'}</p>
-                            <p><strong>Tubo oxígeno:</strong> {r.tuboOxigeno || '—'} · <strong>Cuerpo médico:</strong> {r.trasladoMedico || '—'}</p>
-                          </div>
+                          {renderDetalle(r)}
                         </td>
                       </tr>
                     )}
@@ -243,11 +353,15 @@ const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint
 
       <section className={styles.listCard}>
         <div className={styles.listHeader}>
-          <h3>Rechazadas</h3>
+          <h3>{getTituloSeccion()}</h3>
         </div>
 
-        {filtradosRechazadas.length === 0 ? (
-          <p className={styles.vacio}>Aún no hay derivaciones rechazadas.</p>
+        {listaActiva.length === 0 ? (
+          <p className={styles.vacio}>
+            {seccionActiva === SECCIONES.rechazadas && 'Aún no hay derivaciones rechazadas.'}
+            {seccionActiva === SECCIONES.intersedes && 'Aún no hay derivaciones en Intersedes.'}
+            {seccionActiva === SECCIONES.camas && 'Aún no hay derivaciones en Camas reservadas.'}
+          </p>
         ) : (
           <div className={styles.scroll}>
             <table className={styles.tabla}>
@@ -259,12 +373,14 @@ const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint
                   <th>Edad</th>
                   <th>Obra social</th>
                   <th>Diagnóstico</th>
+                  {seccionActiva === SECCIONES.intersedes && <th>Traslado Intersede</th>}
+                  {seccionActiva === SECCIONES.camas && <th>Cama</th>}
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {filtradosRechazadas.map((r) => (
-                  <Fragment key={`rechazada-${r.id}`}>
+                {listaActiva.map((r, index) => (
+                  <Fragment key={getRowKey(seccionActiva, r, index)}>
                     <tr>
                       <td>
                         <div className={styles.fechaCell}>
@@ -277,14 +393,117 @@ const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint
                       <td>{r.edad ? `${r.edad} años` : '—'}</td>
                       <td>{r.obraSocial || '—'}</td>
                       <td>
-                        <span className={styles.badgeRechazada}>RECHAZADA</span>
+                        {seccionActiva === SECCIONES.rechazadas && (
+                          <span className={styles.badgeRechazada}>RECHAZADA</span>
+                        )}
+                        {seccionActiva === SECCIONES.intersedes && (
+                          <span className={styles.badgeIntersedes}>INTERSEDE</span>
+                        )}
+                        {seccionActiva === SECCIONES.camas && (
+                          <span className={styles.badgeCama}>CAMA RESERVADA</span>
+                        )}
                         <p className={styles.diagText}>{r.diagnostico || '—'}</p>
                       </td>
+                      {seccionActiva === SECCIONES.intersedes && (
+                        <td>
+                          <div className={styles.intersedeEditor}>
+                            {(() => {
+                              const trasladoGuardado = Boolean(r.tipoTrasladoIntersede);
+                              return (
+                                <>
+                                  <select
+                                    className={styles.selectIntersede}
+                                    value={draftIntersedes[r.id] ?? r.tipoTrasladoIntersede ?? ''}
+                                    onChange={(e) =>
+                                      setDraftIntersedes((prev) => ({
+                                        ...prev,
+                                        [r.id]: e.target.value,
+                                      }))
+                                    }
+                                    disabled={trasladoGuardado}
+                                  >
+                                    {OPCIONES_TRASLADO_INTERSEDE.map((opcion) => (
+                                      <option key={opcion.id || 'empty'} value={opcion.id}>
+                                        {opcion.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    className={`${styles.btnAsignar} ${trasladoGuardado ? styles.btnDeshacer : ''}`}
+                                    onClick={() => {
+                                      if (trasladoGuardado) {
+                                        setDraftIntersedes((prev) => ({
+                                          ...prev,
+                                          [r.id]: '',
+                                        }));
+                                        onAsignarIntersede?.(r.id, '');
+                                        return;
+                                      }
+                                      onAsignarIntersede?.(
+                                        r.id,
+                                        draftIntersedes[r.id] ?? r.tipoTrasladoIntersede ?? '',
+                                      );
+                                    }}
+                                  >
+                                    {trasladoGuardado ? 'Deshacer' : 'Guardar'}
+                                  </button>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </td>
+                      )}
+                      {seccionActiva === SECCIONES.camas && (
+                        <td>
+                          <div className={styles.camaEditor}>
+                            {(() => {
+                              const camaGuardada = Boolean(r.camaAsignada);
+                              return (
+                                <>
+                                  <input
+                                    type="text"
+                                    className={styles.inputCama}
+                                    value={draftCamas[r.id] ?? r.camaAsignada ?? ''}
+                                    onChange={(e) =>
+                                      setDraftCamas((prev) => ({
+                                        ...prev,
+                                        [r.id]: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Ej: Cama 14B"
+                                    disabled={camaGuardada}
+                                  />
+                                  <button
+                                    type="button"
+                                    className={`${styles.btnAsignar} ${camaGuardada ? styles.btnDeshacer : ''}`}
+                                    onClick={() => {
+                                      if (camaGuardada) {
+                                        setDraftCamas((prev) => ({
+                                          ...prev,
+                                          [r.id]: '',
+                                        }));
+                                        onAsignarCama?.(r.id, '');
+                                        return;
+                                      }
+                                      onAsignarCama?.(r.id, draftCamas[r.id] ?? r.camaAsignada ?? '');
+                                    }}
+                                  >
+                                    {camaGuardada ? 'Deshacer' : 'Guardar'}
+                                  </button>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </td>
+                      )}
                       <td className={styles.celdasAcciones}>
                         <button
                           type="button"
                           className={styles.iconBtn}
-                          onClick={() => setExpandido(expandido === `rechazada-${r.id}` ? null : `rechazada-${r.id}`)}
+                          onClick={() =>
+                            setExpandido(expandido === `${seccionActiva}-${r.id}` ? null : `${seccionActiva}-${r.id}`)
+                          }
                           title="Ver más"
                         >
                           👁
@@ -299,19 +518,10 @@ const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint
                         </button>
                       </td>
                     </tr>
-                    {expandido === `rechazada-${r.id}` && (
+                    {expandido === `${seccionActiva}-${r.id}` && (
                       <tr className={styles.filaDetalle}>
-                        <td colSpan={7}>
-                          <div className={styles.detalle}>
-                            <p><strong>Lugar:</strong> {r.lugar || '—'}</p>
-                            <p><strong>Plan:</strong> {r.plan || '—'}</p>
-                            <p><strong>Politraumatismo:</strong> {r.politraumatismo || '—'}</p>
-                            <p><strong>Profesional que recibe:</strong> {r.profesionalRecibe || '—'}</p>
-                            <p><strong>Cede que se recibe:</strong> {r.cedeRecibe || '—'}</p>
-                            <p><strong>Observaciones:</strong> {r.observaciones || '—'}</p>
-                            <p><strong>FC / FR / Glasgow / SAT / TA / Temp:</strong> {[r.fc, r.fr, r.glasgow, r.sat, r.ta, r.temperatura].filter(Boolean).join(' — ') || '—'}</p>
-                            <p><strong>Tubo oxígeno:</strong> {r.tuboOxigeno || '—'} · <strong>Cuerpo médico:</strong> {r.trasladoMedico || '—'}</p>
-                          </div>
+                        <td colSpan={seccionActiva === SECCIONES.camas || seccionActiva === SECCIONES.intersedes ? 8 : 7}>
+                          {renderDetalle(r)}
                         </td>
                       </tr>
                     )}
@@ -323,7 +533,12 @@ const TablaRegistros = ({ registros, rechazadas = [], onClear, onDelete, onPrint
         )}
 
         <footer className={styles.footerList}>
-          Mostrando {filtradosRechazadas.length} de {rechazadas.length} rechazadas
+          {seccionActiva === SECCIONES.rechazadas &&
+            `Mostrando ${filtradosRechazadas.length} de ${rechazadas.length} rechazadas`}
+          {seccionActiva === SECCIONES.intersedes &&
+            `Mostrando ${filtradosIntersedes.length} de ${totalIntersedes} intersedes`}
+          {seccionActiva === SECCIONES.camas &&
+            `Mostrando ${filtradosCamas.length} de ${totalCamas} camas reservadas`}
         </footer>
       </section>
     </section>

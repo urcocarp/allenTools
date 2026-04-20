@@ -126,8 +126,14 @@
 
 @media print {
   .sidebar,
-  .topbar {
+  .topbar,
+  .header {
     display: none !important;
+  }
+
+  .app {
+    display: block;
+    background: #fff;
   }
 
   .main {

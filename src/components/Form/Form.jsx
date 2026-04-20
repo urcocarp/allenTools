@@ -34,6 +34,7 @@ const getFormData = (form) => {
 const Form = ({ onGuardar, registroParaImprimir, modoReimpresion = false, onImpresionCompleta }) => {
   const formRef = useRef(null);
   const timestampRef = useRef(null);
+  const printTimestampRef = useRef(null);
   const yaImprimioRef = useRef(false);
 
   const handlePrint = () => {
@@ -47,6 +48,9 @@ const Form = ({ onGuardar, registroParaImprimir, modoReimpresion = false, onImpr
 
     if (timestampRef.current) {
       timestampRef.current.textContent = `Fecha y hora de impresión: ${now}`;
+    }
+    if (printTimestampRef.current) {
+      printTimestampRef.current.textContent = `Fecha y hora de impresión: ${now}`;
     }
 
     form.querySelectorAll('input, textarea').forEach((el) => {
@@ -177,6 +181,7 @@ const Form = ({ onGuardar, registroParaImprimir, modoReimpresion = false, onImpr
           <p className={styles.timestamp} ref={timestampRef} />
         </div>
       </div>
+      <p className={styles.printTimestamp} ref={printTimestampRef} />
 
       <div className={styles.layout}>
         <section className={styles.leftCol}>

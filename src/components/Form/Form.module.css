@@ -62,6 +62,14 @@
   color: #526795;
 }
 
+.printTimestamp {
+  display: none;
+  margin: 0 0 0.8rem;
+  font-size: 0.82rem;
+  color: #000;
+  font-weight: 600;
+}
+
 .layout {
   display: grid;
   grid-template-columns: 1fr 320px;
@@ -340,6 +348,10 @@
     display: none !important;
   }
 
+  .printTimestamp {
+    display: block;
+  }
+
   .form {
     max-width: 100%;
     margin: 0;
@@ -352,6 +364,18 @@
 
   .layout {
     display: block;
+  }
+
+  .card {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 0.9rem;
+    background: transparent;
+  }
+
+  .cardTitle {
+    margin: 0 0 0.45rem;
   }
 
   .form input,

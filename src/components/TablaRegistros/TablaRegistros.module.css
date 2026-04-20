@@ -59,6 +59,8 @@
   border: 1px solid #dde4ef;
   border-radius: 12px;
   padding: 0.9rem 1rem;
+  text-align: left;
+  cursor: pointer;
 }
 
 .statCard p {
@@ -86,6 +88,10 @@
 
 .statOrange {
   border-left: 3px solid #b6511a;
+}
+
+.statCardActiva {
+  box-shadow: inset 0 0 0 2px #1f56b2;
 }
 
 .listCard {
@@ -200,6 +206,26 @@
   color: #8d1b1b;
 }
 
+.badgeIntersedes {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: #dbe7ff;
+  color: #1a4a99;
+}
+
+.badgeCama {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: #fbe7d4;
+  color: #944311;
+}
+
 .diagText {
   margin: 0.3rem 0 0;
   color: #57698a;
@@ -220,6 +246,14 @@
 
 .iconDelete {
   color: #c62828;
+}
+
+.iconIntersede {
+  color: #1e4fa6;
+}
+
+.iconCama {
+  color: #8f4d1b;
 }
 
 .filaDetalle td {
@@ -243,6 +277,51 @@
   color: #73809a;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.camaEditor {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.intersedeEditor {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.inputCama {
+  min-width: 130px;
+  border: 1px solid #d8dfec;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.82rem;
+}
+
+.selectIntersede {
+  min-width: 220px;
+  border: 1px solid #d8dfec;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.82rem;
+  background: #fff;
+}
+
+.btnAsignar {
+  border: 1px solid #2d57a4;
+  background: #fff;
+  color: #2d57a4;
+  border-radius: 8px;
+  padding: 0.4rem 0.55rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.btnDeshacer {
+  border-color: #b94a14;
+  color: #b94a14;
 }
 
 .vacio {
