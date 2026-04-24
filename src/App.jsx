@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Form from './components/Form/Form';
 import IvaCalculator from './components/IvaCalculator/IvaCalculator';
+import LearningHub from './components/LearningHub/LearningHub';
 import TablaRegistros from './components/TablaRegistros/TablaRegistros';
 import { saveRegistro, loadRegistros } from './api/registros';
 import styles from './App.module.css';
@@ -14,6 +15,7 @@ const STORAGE_CAMAS_RESERVADAS_KEY = 'allentools-derivaciones-camas-reservadas';
 const HERRAMIENTAS = [
   { id: 'derivacion', label: 'Formulario derivación', Component: Form },
   { id: 'tabla', label: 'Derivaciones', Component: null },
+  { id: 'learninghub', label: 'LearningHub', Component: LearningHub },
   { id: 'iva', label: 'Calculadora IVA', Component: IvaCalculator },
 ];
 
@@ -66,7 +68,7 @@ function App() {
     window.location.hash = `#${id}`;
   };
 
-  // Navegación por hash (#derivacion, #tabla, #iva)
+  // Navegación por hash (#derivacion, #tabla, #learninghub, #iva)
   useEffect(() => {
     const syncFromHash = () => {
       const hash = window.location.hash.replace('#', '');
@@ -234,7 +236,7 @@ function App() {
 
   return (
     <div className={styles.app}>
-      <header className={styles.header}>
+      <aside className={styles.sidebar}>
         <div className={styles.brand}>
           <img src={logo} alt="Sanatorio Allende" className={styles.brandLogo} />
           <h1 className={styles.titulo}>#AllenTools</h1>
@@ -254,10 +256,12 @@ function App() {
             </a>
           ))}
         </nav>
-      </header>
-      <main className={styles.main}>
-        {renderMain()}
-      </main>
+      </aside>
+      <div className={styles.contentArea}>
+        <main className={styles.main}>
+          {renderMain()}
+        </main>
+      </div>
     </div>
   );
 }
