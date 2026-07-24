@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Form from './components/Form/Form';
 import IvaCalculator from './components/IvaCalculator/IvaCalculator';
+import Caja from './components/Caja/caja';
 import LearningHub from './components/LearningHub/LearningHub';
 import TablaRegistros from './components/TablaRegistros/TablaRegistros';
 import { saveRegistro, loadRegistros } from './api/registros';
@@ -17,6 +18,7 @@ const HERRAMIENTAS = [
   { id: 'tabla', label: 'Derivaciones', Component: null },
   { id: 'learninghub', label: 'LearningHub', Component: LearningHub },
   { id: 'iva', label: 'Calculadora IVA', Component: IvaCalculator },
+  { id: 'caja', label: 'Cierre de caja', Component: Caja },
 ];
 
 function App() {
