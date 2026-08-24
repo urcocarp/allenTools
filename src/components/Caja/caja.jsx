@@ -2,72 +2,32 @@ import { useState, useMemo, useRef } from 'react';
 import styles from './Caja.module.css';
 import logo from '../../assets/allende.jpg';
 
-const FILA_VACIA = {
-  nombreApellido: '',
+const TURNOS = ['Mañana', 'Tarde', 'Noche'];
+
+const FILA_GUARDIA = { nombreApellido: '', numTicket: '', importe: '' };
+const FILA_INTERNACIONES = {
+  paciente: '',
+  numeroInternado: '',
   concepto: '',
-  numRecibo: '',
-  formaPago: '',
+  recibo: '',
   importe: '',
 };
-
-const FORMAS_PAGO = [
-  'Efectivo',
-  'Tarjeta débito',
-  'Tarjeta crédito',
-  'Transferencia',
-  'Mercado Pago',
-  'Cheque',
-  'Otro',
-];
-
-const SECCIONES = [
-  {
-    id: 'guardia',
-    titulo: 'Guardia',
-    subtitulo: 'Cobros del servicio de guardia',
-    color: 'blue',
-    icono: '🛡️',
-    isUSD: false,
-  },
-  {
-    id: 'internaciones',
-    titulo: 'Internaciones',
-    subtitulo: 'Cobros por internación',
-    color: 'green',
-    icono: '🏥',
-    isUSD: false,
-  },
-  {
-    id: 'rendicion',
-    titulo: 'Rendición Varios',
-    subtitulo: 'Cobros varios / misceláneos',
-    color: 'orange',
-    icono: '📄',
-    isUSD: false,
-  },
-  {
-    id: 'dolares',
-    titulo: 'Dólares en Caución',
-    subtitulo: 'Depósitos en dólares',
-    color: 'yellow',
-    icono: '💵',
-    isUSD: true,
-  },
-  {
-    id: 'cheques',
-    titulo: 'Cheques',
-    subtitulo: 'Pagos recibidos en cheques',
-    color: 'purple',
-    icono: '📝',
-    isUSD: false,
-  },
-];
-
-const crearFilasIniciales = () =>
-  SECCIONES.reduce((acc, { id }) => {
-    acc[id] = [{ ...FILA_VACIA }];
-    return acc;
-  }, {});
+const FILA_RENDICION = {
+  paciente: '',
+  concepto: '',
+  recibo: '',
+  factura: '',
+  importe: '',
+};
+const FILA_CHEQUES = { banco: '', nroCheque: '', fechaCobro: '', importe: '' };
+const DOLARES_VACIO = {
+  nombreApellido: '',
+  numRecibo: '',
+  nroInternado: '',
+  cambioDelDia: '',
+  concepto: '',
+  importeUSD: '',
+};
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 
@@ -99,6 +59,13 @@ const formatUSD = (n) => {
   }).format(n);
 };
 
+const formatDiferencia = (n) => {
+  if (n == null || Number.isNaN(n) || n === 0) return '$ 0,00';
+  const monto = n < 0 ? -n : n;
+  const pesos = formatPesos(monto);
+  return n > 0 ? `+${pesos}` : `-${pesos}`;
+};
+
 const formatFecha = (iso) => {
   if (!iso) return '–';
   const [y, m, d] = iso.split('-');
@@ -106,21 +73,14 @@ const formatFecha = (iso) => {
   return `${d}/${m}/${y}`;
 };
 
-const sumarFilas = (filas) =>
+const sumarImportes = (filas, campo = 'importe') =>
   filas.reduce((acc, fila) => {
-    const valor = parseMonto(fila.importe);
+    const valor = parseMonto(fila[campo]);
     return valor != null ? acc + valor : acc;
   }, 0);
 
-const filasConDatos = (filas) =>
-  filas.filter(
-    (f) =>
-      f.nombreApellido.trim() ||
-      f.concepto.trim() ||
-      f.numRecibo.trim() ||
-      f.formaPago ||
-      parseMonto(f.importe) != null,
-  );
+const filasConDatos = (filas, campos) =>
+  filas.filter((f) => campos.some((c) => String(f[c] ?? '').trim()) || parseMonto(f.importe) != null);
 
 const Caja = () => {
   const printTimestampRef = useRef(null);
@@ -129,61 +89,100 @@ const Caja = () => {
   const [fechaTurno, setFechaTurno] = useState(hoyISO);
   const [numeroPrecinto, setNumeroPrecinto] = useState('');
   const [turno, setTurno] = useState('');
-  const [cotizacionUSD, setCotizacionUSD] = useState('');
-  const [seccionesAbiertas, setSeccionesAbiertas] = useState({ guardia: true });
-  const [filas, setFilas] = useState(crearFilasIniciales);
+  const [totalGuardiaSuperior, setTotalGuardiaSuperior] = useState('');
+  const [observaciones, setObservaciones] = useState('');
+  const [seccionesAbiertas, setSeccionesAbiertas] = useState({
+    guardia: true,
+    internaciones: false,
+    rendicion: false,
+    dolares: false,
+    cheques: false,
+    observaciones: false,
+  });
 
-  const cotizacionNum = useMemo(() => parseMonto(cotizacionUSD), [cotizacionUSD]);
+  const [filasGuardia, setFilasGuardia] = useState([{ ...FILA_GUARDIA }]);
+  const [filasInternaciones, setFilasInternaciones] = useState([{ ...FILA_INTERNACIONES }]);
+  const [filasRendicion, setFilasRendicion] = useState([{ ...FILA_RENDICION }]);
+  const [filasCheques, setFilasCheques] = useState([{ ...FILA_CHEQUES }]);
+  const [dolares, setDolares] = useState({ ...DOLARES_VACIO });
 
-  const totales = useMemo(() => {
-    const result = {};
-    SECCIONES.forEach(({ id }) => {
-      result[id] = sumarFilas(filas[id]);
-    });
-    return result;
-  }, [filas]);
+  const totalGuardiaSuperiorNum = useMemo(
+    () => parseMonto(totalGuardiaSuperior) ?? 0,
+    [totalGuardiaSuperior],
+  );
 
-  const dolaresARS = useMemo(() => {
-    if (totales.dolares === 0) return 0;
-    if (cotizacionNum == null) return null;
-    return totales.dolares * cotizacionNum;
-  }, [totales.dolares, cotizacionNum]);
+  const totalGuardiaAcordeon = useMemo(
+    () => sumarImportes(filasGuardia),
+    [filasGuardia],
+  );
 
-  const totalGeneral = useMemo(() => {
-    const restas = totales.internaciones + totales.rendicion + totales.cheques;
-    const dolares = dolaresARS ?? 0;
-    return totales.guardia - restas - dolares;
-  }, [totales, dolaresARS]);
+  const totalInternaciones = useMemo(
+    () => sumarImportes(filasInternaciones),
+    [filasInternaciones],
+  );
+
+  const totalRendicion = useMemo(
+    () => sumarImportes(filasRendicion),
+    [filasRendicion],
+  );
+
+  const totalCheques = useMemo(
+    () => sumarImportes(filasCheques),
+    [filasCheques],
+  );
+
+  const totalDolaresUSD = useMemo(
+    () => parseMonto(dolares.importeUSD) ?? 0,
+    [dolares.importeUSD],
+  );
+
+  const totalDolaresARS = useMemo(() => {
+    const usd = parseMonto(dolares.importeUSD);
+    const cambio = parseMonto(dolares.cambioDelDia);
+    if (usd == null || cambio == null) return 0;
+    return usd * cambio;
+  }, [dolares.importeUSD, dolares.cambioDelDia]);
+
+  const totalAcordeones = useMemo(
+    () =>
+      totalGuardiaAcordeon +
+      totalInternaciones +
+      totalRendicion +
+      totalDolaresARS +
+      totalCheques,
+    [
+      totalGuardiaAcordeon,
+      totalInternaciones,
+      totalRendicion,
+      totalDolaresARS,
+      totalCheques,
+    ],
+  );
+
+  const diferencia = useMemo(
+    () => totalGuardiaSuperiorNum - totalAcordeones,
+    [totalGuardiaSuperiorNum, totalAcordeones],
+  );
 
   const toggleSeccion = (id) => {
     setSeccionesAbiertas((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const updateFila = (seccionId, index, field, value) => {
-    setFilas((prev) => ({
-      ...prev,
-      [seccionId]: prev[seccionId].map((fila, i) =>
-        i === index ? { ...fila, [field]: value } : fila,
-      ),
-    }));
+  const updateFila = (setter, index, field, value) => {
+    setter((prev) =>
+      prev.map((fila, i) => (i === index ? { ...fila, [field]: value } : fila)),
+    );
   };
 
-  const addFila = (seccionId) => {
-    setFilas((prev) => ({
-      ...prev,
-      [seccionId]: [...prev[seccionId], { ...FILA_VACIA }],
-    }));
+  const addFila = (setter, vacio, seccionId) => {
+    setter((prev) => [...prev, { ...vacio }]);
     setSeccionesAbiertas((prev) => ({ ...prev, [seccionId]: true }));
   };
 
-  const removeFila = (seccionId, index) => {
-    setFilas((prev) => ({
-      ...prev,
-      [seccionId]:
-        prev[seccionId].length <= 1
-          ? [{ ...FILA_VACIA }]
-          : prev[seccionId].filter((_, i) => i !== index),
-    }));
+  const removeFila = (setter, vacio, index) => {
+    setter((prev) =>
+      prev.length <= 1 ? [{ ...vacio }] : prev.filter((_, i) => i !== index),
+    );
   };
 
   const limpiar = () => {
@@ -191,9 +190,21 @@ const Caja = () => {
     setFechaTurno(hoyISO());
     setNumeroPrecinto('');
     setTurno('');
-    setCotizacionUSD('');
-    setSeccionesAbiertas({ guardia: true });
-    setFilas(crearFilasIniciales());
+    setTotalGuardiaSuperior('');
+    setObservaciones('');
+    setFilasGuardia([{ ...FILA_GUARDIA }]);
+    setFilasInternaciones([{ ...FILA_INTERNACIONES }]);
+    setFilasRendicion([{ ...FILA_RENDICION }]);
+    setFilasCheques([{ ...FILA_CHEQUES }]);
+    setDolares({ ...DOLARES_VACIO });
+    setSeccionesAbiertas({
+      guardia: true,
+      internaciones: false,
+      rendicion: false,
+      dolares: false,
+      cheques: false,
+      observaciones: false,
+    });
   };
 
   const handlePrint = () => {
@@ -207,56 +218,22 @@ const Caja = () => {
     window.print();
   };
 
-  const renderTotalSeccion = (seccion) => {
-    const total = totales[seccion.id];
-    if (seccion.isUSD) return formatUSD(total);
-    return formatPesos(total);
-  };
-
-  const renderTablaFilas = (seccionId, { soloImpresion = false } = {}) => {
-    const seccion = SECCIONES.find((s) => s.id === seccionId);
-    const filasMostrar = filasConDatos(filas[seccionId]);
-    if (filasMostrar.length === 0) return null;
-
-    return (
-      <table
-        key={seccionId}
-        className={soloImpresion ? styles.tablaPrint : styles.tablaSeccion}
-      >
-        <caption>{seccion.titulo}</caption>
-        <thead>
-          <tr>
-            <th>Nombre y apellido</th>
-            <th>Concepto</th>
-            <th>Nº recibo</th>
-            <th>Forma de pago</th>
-            <th>Importe</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filasMostrar.map((fila, i) => (
-            <tr key={i}>
-              <td>{fila.nombreApellido || '—'}</td>
-              <td>{fila.concepto || '—'}</td>
-              <td>{fila.numRecibo || '—'}</td>
-              <td>{fila.formaPago || '—'}</td>
-              <td>
-                {seccion.isUSD
-                  ? formatUSD(parseMonto(fila.importe))
-                  : formatPesos(parseMonto(fila.importe))}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colSpan={4}>Total {seccion.titulo}</td>
-            <td>{renderTotalSeccion(seccion)}</td>
-          </tr>
-        </tfoot>
-      </table>
-    );
-  };
+  const renderBtnRemove = (onClick, label) => (
+    <button
+      type="button"
+      className={`${styles.btnRemove} ${styles.noPrint}`}
+      onClick={onClick}
+      aria-label={label}
+      title="Quitar"
+    >
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+        />
+      </svg>
+    </button>
+  );
 
   return (
     <section className={styles.wrapper}>
@@ -274,20 +251,53 @@ const Caja = () => {
           <span className={styles.badgeActivo}>Turno Activo</span>
         </div>
         <div className={styles.topBarRight}>
-          <span className={styles.fechaHoy}>{formatFecha(fechaTurno)}</span>
+          <label className={styles.fechaPicker}>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z"
+              />
+            </svg>
+            <input
+              type="date"
+              value={fechaTurno}
+              onChange={(e) => setFechaTurno(e.target.value)}
+              aria-label="Fecha del turno"
+            />
+          </label>
           <button type="button" className={styles.btnLimpiar} onClick={limpiar}>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+              />
+            </svg>
             Limpiar
           </button>
           <button type="button" className={styles.btnPrint} onClick={handlePrint}>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"
+              />
+            </svg>
             Imprimir cierre
           </button>
         </div>
       </div>
 
-      <fieldset className={`${styles.intro} ${styles.noPrint}`}>
+      <div className={`${styles.datosCard} ${styles.noPrint}`}>
         <div className={styles.introGrid}>
           <div className={styles.inputGroup}>
-            <label htmlFor="nombre-apellido">Nombre y apellido</label>
+            <label htmlFor="nombre-apellido">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                />
+              </svg>
+              Nombre y apellido
+            </label>
             <input
               id="nombre-apellido"
               type="text"
@@ -297,16 +307,24 @@ const Caja = () => {
             />
           </div>
           <div className={styles.inputGroup}>
-            <label htmlFor="fecha-turno">Fecha del turno</label>
+            <label htmlFor="fecha-turno-card">Fecha del turno</label>
             <input
-              id="fecha-turno"
+              id="fecha-turno-card"
               type="date"
               value={fechaTurno}
               onChange={(e) => setFechaTurno(e.target.value)}
             />
           </div>
           <div className={styles.inputGroup}>
-            <label htmlFor="numero-precinto">Nº de precinto</label>
+            <label htmlFor="numero-precinto">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"
+                />
+              </svg>
+              Nº de precinto
+            </label>
             <input
               id="numero-precinto"
               type="text"
@@ -318,203 +336,608 @@ const Caja = () => {
           </div>
           <div className={styles.inputGroup}>
             <label htmlFor="turno">Turno</label>
-            <input
+            <select
               id="turno"
-              type="text"
-              placeholder="Ej: Mañana / Tarde / Noche"
               value={turno}
               onChange={(e) => setTurno(e.target.value)}
+            >
+              <option value="">Seleccionar…</option>
+              {TURNOS.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className={styles.totalGuardiaSuperiorRow}>
+          <label htmlFor="total-guardia-superior">Total de guardia</label>
+          <input
+            id="total-guardia-superior"
+            type="text"
+            inputMode="decimal"
+            placeholder="$ 0,00"
+            value={totalGuardiaSuperior}
+            onChange={(e) => setTotalGuardiaSuperior(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className={styles.acordeones}>
+        {/* GUARDIA */}
+        <div className={`${styles.acordeon} ${styles.acordeonBlue}`}>
+          <button
+            type="button"
+            className={`${styles.acordeonHeader} ${styles.noPrint}`}
+            onClick={() => toggleSeccion('guardia')}
+            aria-expanded={seccionesAbiertas.guardia}
+          >
+            <span className={`${styles.acordeonIcono} ${styles.iconBlue}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"
+                />
+              </svg>
+            </span>
+            <span className={styles.acordeonTitulos}>
+              <strong>Guardia</strong>
+              <small>Cobros del servicio de guardia</small>
+            </span>
+            <span className={styles.acordeonTotal}>{formatPesos(totalGuardiaAcordeon)}</span>
+            <span className={styles.acordeonChevron}>
+              {seccionesAbiertas.guardia ? '▾' : '▸'}
+            </span>
+          </button>
+          <div
+            className={`${styles.acordeonBody} ${seccionesAbiertas.guardia ? styles.acordeonBodyAbierto : ''} ${styles.noPrint}`}
+          >
+            <div className={`${styles.tablaHeader} ${styles.tablaHeaderBlue}`}>
+              <span>Nombre y apellido</span>
+              <span>Nº ticket</span>
+              <span>Importe</span>
+              <span className={styles.colAccion} />
+            </div>
+            <ul className={styles.filasList}>
+              {filasGuardia.map((fila, index) => (
+                <li key={index} className={`${styles.filaRow} ${styles.filaRowGuardia}`}>
+                  <input
+                    type="text"
+                    placeholder="Nombre"
+                    value={fila.nombreApellido}
+                    onChange={(e) =>
+                      updateFila(setFilasGuardia, index, 'nombreApellido', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ticket"
+                    value={fila.numTicket}
+                    onChange={(e) =>
+                      updateFila(setFilasGuardia, index, 'numTicket', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={fila.importe}
+                    onChange={(e) =>
+                      updateFila(setFilasGuardia, index, 'importe', e.target.value)
+                    }
+                    className={styles.inputImporte}
+                  />
+                  {renderBtnRemove(
+                    () => removeFila(setFilasGuardia, FILA_GUARDIA, index),
+                    `Quitar fila ${index + 1} guardia`,
+                  )}
+                </li>
+              ))}
+            </ul>
+            <div className={styles.acordeonFooter}>
+              <button
+                type="button"
+                className={styles.btnAdd}
+                onClick={() => addFila(setFilasGuardia, FILA_GUARDIA, 'guardia')}
+              >
+                + Agregar fila
+              </button>
+              <div className={`${styles.totalSeccion} ${styles.totalSeccionBlue}`}>
+                <span>Total Guardia</span>
+                <strong>{formatPesos(totalGuardiaAcordeon)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* INTERNACIONES */}
+        <div className={`${styles.acordeon} ${styles.acordeonGreen}`}>
+          <button
+            type="button"
+            className={`${styles.acordeonHeader} ${styles.noPrint}`}
+            onClick={() => toggleSeccion('internaciones')}
+            aria-expanded={seccionesAbiertas.internaciones}
+          >
+            <span className={`${styles.acordeonIcono} ${styles.iconGreen}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h5V6h4v4h5v4z"
+                />
+              </svg>
+            </span>
+            <span className={styles.acordeonTitulos}>
+              <strong>Internaciones</strong>
+              <small>Cobros por internación</small>
+            </span>
+            <span className={styles.acordeonTotal}>{formatPesos(totalInternaciones)}</span>
+            <span className={styles.acordeonChevron}>
+              {seccionesAbiertas.internaciones ? '▾' : '▸'}
+            </span>
+          </button>
+          <div
+            className={`${styles.acordeonBody} ${seccionesAbiertas.internaciones ? styles.acordeonBodyAbierto : ''} ${styles.noPrint}`}
+          >
+            <div className={`${styles.tablaHeader} ${styles.tablaHeaderGreen}`}>
+              <span>Paciente</span>
+              <span>Número internado</span>
+              <span>Concepto</span>
+              <span>Recibo</span>
+              <span>Importe</span>
+              <span className={styles.colAccion} />
+            </div>
+            <ul className={styles.filasList}>
+              {filasInternaciones.map((fila, index) => (
+                <li key={index} className={`${styles.filaRow} ${styles.filaRowInternaciones}`}>
+                  <input
+                    type="text"
+                    value={fila.paciente}
+                    onChange={(e) =>
+                      updateFila(setFilasInternaciones, index, 'paciente', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    value={fila.numeroInternado}
+                    onChange={(e) =>
+                      updateFila(setFilasInternaciones, index, 'numeroInternado', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    value={fila.concepto}
+                    onChange={(e) =>
+                      updateFila(setFilasInternaciones, index, 'concepto', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    value={fila.recibo}
+                    onChange={(e) =>
+                      updateFila(setFilasInternaciones, index, 'recibo', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={fila.importe}
+                    onChange={(e) =>
+                      updateFila(setFilasInternaciones, index, 'importe', e.target.value)
+                    }
+                    className={styles.inputImporte}
+                  />
+                  {renderBtnRemove(
+                    () => removeFila(setFilasInternaciones, FILA_INTERNACIONES, index),
+                    `Quitar fila ${index + 1} internaciones`,
+                  )}
+                </li>
+              ))}
+            </ul>
+            <div className={styles.acordeonFooter}>
+              <button
+                type="button"
+                className={styles.btnAdd}
+                onClick={() =>
+                  addFila(setFilasInternaciones, FILA_INTERNACIONES, 'internaciones')
+                }
+              >
+                + Agregar fila
+              </button>
+              <div className={`${styles.totalSeccion} ${styles.totalSeccionGreen}`}>
+                <span>Total Internaciones</span>
+                <strong>{formatPesos(totalInternaciones)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RENDICIÓN VARIOS */}
+        <div className={`${styles.acordeon} ${styles.acordeonOrange}`}>
+          <button
+            type="button"
+            className={`${styles.acordeonHeader} ${styles.noPrint}`}
+            onClick={() => toggleSeccion('rendicion')}
+            aria-expanded={seccionesAbiertas.rendicion}
+          >
+            <span className={`${styles.acordeonIcono} ${styles.iconOrange}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"
+                />
+              </svg>
+            </span>
+            <span className={styles.acordeonTitulos}>
+              <strong>Rendición Varios</strong>
+              <small>Cobros varios / misceláneos</small>
+            </span>
+            <span className={styles.acordeonTotal}>{formatPesos(totalRendicion)}</span>
+            <span className={styles.acordeonChevron}>
+              {seccionesAbiertas.rendicion ? '▾' : '▸'}
+            </span>
+          </button>
+          <div
+            className={`${styles.acordeonBody} ${seccionesAbiertas.rendicion ? styles.acordeonBodyAbierto : ''} ${styles.noPrint}`}
+          >
+            <div className={`${styles.tablaHeader} ${styles.tablaHeaderOrange}`}>
+              <span>Paciente</span>
+              <span>Concepto</span>
+              <span>Recibo</span>
+              <span>Factura</span>
+              <span>Importe</span>
+              <span className={styles.colAccion} />
+            </div>
+            <ul className={styles.filasList}>
+              {filasRendicion.map((fila, index) => (
+                <li key={index} className={`${styles.filaRow} ${styles.filaRowRendicion}`}>
+                  <input
+                    type="text"
+                    value={fila.paciente}
+                    onChange={(e) =>
+                      updateFila(setFilasRendicion, index, 'paciente', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    value={fila.concepto}
+                    onChange={(e) =>
+                      updateFila(setFilasRendicion, index, 'concepto', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    value={fila.recibo}
+                    onChange={(e) =>
+                      updateFila(setFilasRendicion, index, 'recibo', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    value={fila.factura}
+                    onChange={(e) =>
+                      updateFila(setFilasRendicion, index, 'factura', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={fila.importe}
+                    onChange={(e) =>
+                      updateFila(setFilasRendicion, index, 'importe', e.target.value)
+                    }
+                    className={styles.inputImporte}
+                  />
+                  {renderBtnRemove(
+                    () => removeFila(setFilasRendicion, FILA_RENDICION, index),
+                    `Quitar fila ${index + 1} rendición`,
+                  )}
+                </li>
+              ))}
+            </ul>
+            <div className={styles.acordeonFooter}>
+              <button
+                type="button"
+                className={styles.btnAdd}
+                onClick={() => addFila(setFilasRendicion, FILA_RENDICION, 'rendicion')}
+              >
+                + Agregar fila
+              </button>
+              <div className={`${styles.totalSeccion} ${styles.totalSeccionOrange}`}>
+                <span>Total Varios</span>
+                <strong>{formatPesos(totalRendicion)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* DÓLARES EN CAUCIÓN */}
+        <div className={`${styles.acordeon} ${styles.acordeonYellow}`}>
+          <button
+            type="button"
+            className={`${styles.acordeonHeader} ${styles.noPrint}`}
+            onClick={() => toggleSeccion('dolares')}
+            aria-expanded={seccionesAbiertas.dolares}
+          >
+            <span className={`${styles.acordeonIcono} ${styles.iconYellow}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"
+                />
+              </svg>
+            </span>
+            <span className={styles.acordeonTitulos}>
+              <strong>Dólares en Caución</strong>
+              <small>Depósitos en dólares</small>
+            </span>
+            <span className={styles.acordeonTotal}>{formatUSD(totalDolaresUSD)}</span>
+            <span className={styles.acordeonChevron}>
+              {seccionesAbiertas.dolares ? '▾' : '▸'}
+            </span>
+          </button>
+          <div
+            className={`${styles.acordeonBody} ${seccionesAbiertas.dolares ? styles.acordeonBodyAbierto : ''} ${styles.noPrint}`}
+          >
+            <div className={styles.dolaresGrid}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="dol-nombre">Nombre y apellido</label>
+                <input
+                  id="dol-nombre"
+                  type="text"
+                  value={dolares.nombreApellido}
+                  onChange={(e) =>
+                    setDolares((prev) => ({ ...prev, nombreApellido: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="dol-recibo">Nº de recibo</label>
+                <input
+                  id="dol-recibo"
+                  type="text"
+                  value={dolares.numRecibo}
+                  onChange={(e) =>
+                    setDolares((prev) => ({ ...prev, numRecibo: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="dol-internado">Nro de internado</label>
+                <input
+                  id="dol-internado"
+                  type="text"
+                  value={dolares.nroInternado}
+                  onChange={(e) =>
+                    setDolares((prev) => ({ ...prev, nroInternado: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="dol-cambio">Cambio del día</label>
+                <input
+                  id="dol-cambio"
+                  type="text"
+                  inputMode="decimal"
+                  value={dolares.cambioDelDia}
+                  onChange={(e) =>
+                    setDolares((prev) => ({ ...prev, cambioDelDia: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={`${styles.inputGroup} ${styles.dolaresConcepto}`}>
+                <label htmlFor="dol-concepto">Concepto</label>
+                <input
+                  id="dol-concepto"
+                  type="text"
+                  value={dolares.concepto}
+                  onChange={(e) =>
+                    setDolares((prev) => ({ ...prev, concepto: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="dol-importe">Importe (USD)</label>
+                <input
+                  id="dol-importe"
+                  type="text"
+                  inputMode="decimal"
+                  value={dolares.importeUSD}
+                  onChange={(e) =>
+                    setDolares((prev) => ({ ...prev, importeUSD: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <div className={styles.acordeonFooter}>
+              <div />
+              <div className={`${styles.totalSeccion} ${styles.totalSeccionYellow}`}>
+                <span>Total (ARS)</span>
+                <strong>{formatPesos(totalDolaresARS)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CHEQUES */}
+        <div className={`${styles.acordeon} ${styles.acordeonPurple}`}>
+          <button
+            type="button"
+            className={`${styles.acordeonHeader} ${styles.noPrint}`}
+            onClick={() => toggleSeccion('cheques')}
+            aria-expanded={seccionesAbiertas.cheques}
+          >
+            <span className={`${styles.acordeonIcono} ${styles.iconPurple}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"
+                />
+              </svg>
+            </span>
+            <span className={styles.acordeonTitulos}>
+              <strong>Cheques</strong>
+              <small>Pagos recibidos en cheque</small>
+            </span>
+            <span className={styles.acordeonTotal}>{formatPesos(totalCheques)}</span>
+            <span className={styles.acordeonChevron}>
+              {seccionesAbiertas.cheques ? '▾' : '▸'}
+            </span>
+          </button>
+          <div
+            className={`${styles.acordeonBody} ${seccionesAbiertas.cheques ? styles.acordeonBodyAbierto : ''} ${styles.noPrint}`}
+          >
+            <div className={`${styles.tablaHeader} ${styles.tablaHeaderPurple}`}>
+              <span>Banco</span>
+              <span>Nro. cheque</span>
+              <span>Fecha cobro</span>
+              <span>Importe</span>
+              <span className={styles.colAccion} />
+            </div>
+            <ul className={styles.filasList}>
+              {filasCheques.map((fila, index) => (
+                <li key={index} className={`${styles.filaRow} ${styles.filaRowCheques}`}>
+                  <input
+                    type="text"
+                    value={fila.banco}
+                    onChange={(e) =>
+                      updateFila(setFilasCheques, index, 'banco', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    value={fila.nroCheque}
+                    onChange={(e) =>
+                      updateFila(setFilasCheques, index, 'nroCheque', e.target.value)
+                    }
+                  />
+                  <input
+                    type="date"
+                    value={fila.fechaCobro}
+                    onChange={(e) =>
+                      updateFila(setFilasCheques, index, 'fechaCobro', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={fila.importe}
+                    onChange={(e) =>
+                      updateFila(setFilasCheques, index, 'importe', e.target.value)
+                    }
+                    className={styles.inputImporte}
+                  />
+                  {renderBtnRemove(
+                    () => removeFila(setFilasCheques, FILA_CHEQUES, index),
+                    `Quitar fila ${index + 1} cheques`,
+                  )}
+                </li>
+              ))}
+            </ul>
+            <div className={styles.acordeonFooter}>
+              <button
+                type="button"
+                className={styles.btnAdd}
+                onClick={() => addFila(setFilasCheques, FILA_CHEQUES, 'cheques')}
+              >
+                + Agregar fila
+              </button>
+              <div className={`${styles.totalSeccion} ${styles.totalSeccionPurple}`}>
+                <span>Total Cheques</span>
+                <strong>{formatPesos(totalCheques)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* OBSERVACIONES */}
+        <div className={`${styles.acordeon} ${styles.acordeonGray}`}>
+          <button
+            type="button"
+            className={`${styles.acordeonHeader} ${styles.noPrint}`}
+            onClick={() => toggleSeccion('observaciones')}
+            aria-expanded={seccionesAbiertas.observaciones}
+          >
+            <span className={`${styles.acordeonIcono} ${styles.iconGray}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M3 18h18v-2H3v2zM3 6v2h18V6H3zm0 7h18v-2H3v2z"
+                />
+              </svg>
+            </span>
+            <span className={styles.acordeonTitulos}>
+              <strong>Observaciones</strong>
+              <small>Notas adicionales y diferencias de caja</small>
+            </span>
+            <span className={styles.acordeonChevron}>
+              {seccionesAbiertas.observaciones ? '▾' : '▸'}
+            </span>
+          </button>
+          <div
+            className={`${styles.acordeonBody} ${seccionesAbiertas.observaciones ? styles.acordeonBodyAbierto : ''} ${styles.noPrint}`}
+          >
+            <label htmlFor="observaciones" className={styles.obsLabel}>
+              Detalle de observaciones
+            </label>
+            <textarea
+              id="observaciones"
+              className={styles.textareaObs}
+              placeholder="Ingrese observaciones, faltantes o sobrantes detectados..."
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
             />
           </div>
         </div>
-      </fieldset>
-
-      <div className={styles.acordeones}>
-        {SECCIONES.map((seccion) => {
-          const abierta = seccionesAbiertas[seccion.id];
-          const filasSeccion = filas[seccion.id];
-
-          return (
-            <div
-              key={seccion.id}
-              className={`${styles.acordeon} ${styles[`acordeon${seccion.color}`]}`}
-            >
-              <button
-                type="button"
-                className={`${styles.acordeonHeader} ${styles.noPrint}`}
-                onClick={() => toggleSeccion(seccion.id)}
-                aria-expanded={abierta}
-              >
-                <span className={styles.acordeonIcono}>{seccion.icono}</span>
-                <span className={styles.acordeonTitulos}>
-                  <strong>{seccion.titulo}</strong>
-                  <small>{seccion.subtitulo}</small>
-                </span>
-                <span className={styles.acordeonTotal}>{renderTotalSeccion(seccion)}</span>
-                <span className={styles.acordeonChevron}>{abierta ? '▾' : '▸'}</span>
-              </button>
-
-              <div
-                className={`${styles.acordeonBody} ${abierta ? styles.acordeonBodyAbierto : ''} ${styles.noPrint}`}
-              >
-                {seccion.isUSD && (
-                  <div className={styles.cotizacionRow}>
-                    <label htmlFor="cotizacion-usd">Cotización USD (ARS)</label>
-                    <input
-                      id="cotizacion-usd"
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="Ej: 1.050,00"
-                      value={cotizacionUSD}
-                      onChange={(e) => setCotizacionUSD(e.target.value)}
-                    />
-                    {totales.dolares > 0 && cotizacionNum != null && (
-                      <span className={styles.cotizacionEquiv}>
-                        = {formatPesos(dolaresARS)}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                <div className={styles.filaLabels} aria-hidden="true">
-                  <span>Nombre y apellido</span>
-                  <span>Concepto</span>
-                  <span>Nº recibo</span>
-                  <span>Forma de pago</span>
-                  <span>Importe</span>
-                  <span className={styles.colAccion} />
-                </div>
-
-                <ul className={styles.filasList}>
-                  {filasSeccion.map((fila, index) => (
-                    <li key={index} className={styles.filaRow}>
-                      <input
-                        type="text"
-                        placeholder="Nombre"
-                        value={fila.nombreApellido}
-                        onChange={(e) =>
-                          updateFila(seccion.id, index, 'nombreApellido', e.target.value)
-                        }
-                        aria-label={`Nombre fila ${index + 1} ${seccion.titulo}`}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Concepto"
-                        value={fila.concepto}
-                        onChange={(e) =>
-                          updateFila(seccion.id, index, 'concepto', e.target.value)
-                        }
-                        aria-label={`Concepto fila ${index + 1} ${seccion.titulo}`}
-                      />
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="Recibo"
-                        value={fila.numRecibo}
-                        onChange={(e) =>
-                          updateFila(seccion.id, index, 'numRecibo', e.target.value)
-                        }
-                        aria-label={`Recibo fila ${index + 1} ${seccion.titulo}`}
-                      />
-                      <select
-                        value={fila.formaPago}
-                        onChange={(e) =>
-                          updateFila(seccion.id, index, 'formaPago', e.target.value)
-                        }
-                        aria-label={`Forma de pago fila ${index + 1} ${seccion.titulo}`}
-                      >
-                        <option value="">Seleccionar…</option>
-                        {FORMAS_PAGO.map((fp) => (
-                          <option key={fp} value={fp}>
-                            {fp}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder={seccion.isUSD ? 'USD' : '0,00'}
-                        value={fila.importe}
-                        onChange={(e) =>
-                          updateFila(seccion.id, index, 'importe', e.target.value)
-                        }
-                        aria-label={`Importe fila ${index + 1} ${seccion.titulo}`}
-                        className={styles.inputImporte}
-                      />
-                      <button
-                        type="button"
-                        className={styles.btnRemove}
-                        onClick={() => removeFila(seccion.id, index)}
-                        aria-label={`Quitar fila ${index + 1}`}
-                        title="Quitar"
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className={styles.acordeonFooter}>
-                  <button
-                    type="button"
-                    className={styles.btnAdd}
-                    onClick={() => addFila(seccion.id)}
-                  >
-                    + Agregar fila
-                  </button>
-                  <div className={styles.totalSeccion}>
-                    <span>Total {seccion.titulo}</span>
-                    <strong>{renderTotalSeccion(seccion)}</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       <div className={`${styles.resumenGeneral} ${styles.noPrint}`}>
-        <h3>Resumen General del Turno</h3>
+        <h3>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"
+            />
+          </svg>
+          Resumen General del Turno
+        </h3>
         <ul className={styles.resumenLista}>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotBlue}`} />
             <span>Guardia</span>
-            <strong>{formatPesos(totales.guardia)}</strong>
+            <strong>{formatPesos(totalGuardiaAcordeon)}</strong>
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotGreen}`} />
             <span>Internaciones</span>
-            <strong>− {formatPesos(totales.internaciones)}</strong>
+            <strong>{formatPesos(totalInternaciones)}</strong>
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotOrange}`} />
             <span>Rendición Varios</span>
-            <strong>− {formatPesos(totales.rendicion)}</strong>
+            <strong>{formatPesos(totalRendicion)}</strong>
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotYellow}`} />
             <span>
               Dólares en Caución{' '}
               <small>
-                {formatUSD(totales.dolares)}
-                {dolaresARS != null ? ` (${formatPesos(dolaresARS)} ARS)` : ''}
+                {formatUSD(totalDolaresUSD)} ({formatPesos(totalDolaresARS)} ARS)
               </small>
             </span>
-            <strong>− {formatPesos(dolaresARS ?? 0)}</strong>
+            <strong>{formatPesos(totalDolaresARS)}</strong>
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotPurple}`} />
             <span>Cheques</span>
-            <strong>− {formatPesos(totales.cheques)}</strong>
+            <strong>{formatPesos(totalCheques)}</strong>
           </li>
         </ul>
         <div className={styles.totalGeneralBar}>
           <span>Total General (ARS)</span>
-          <strong>{formatPesos(totalGeneral)}</strong>
+          <strong>{formatDiferencia(diferencia)}</strong>
         </div>
-        <p className={styles.formulaHint}>
-          Total General = Guardia − Internaciones − Rendición Varios − Cheques − Dólares (ARS)
-        </p>
       </div>
 
       <div className={styles.printDetalle}>
@@ -531,47 +954,226 @@ const Caja = () => {
           <p>
             <strong>Turno:</strong> {turno || '—'}
           </p>
-          {cotizacionNum != null && (
-            <p>
-              <strong>Cotización USD:</strong> {formatPesos(cotizacionNum)}
-            </p>
-          )}
+          <p>
+            <strong>Total de guardia (superior):</strong>{' '}
+            {formatPesos(totalGuardiaSuperiorNum)}
+          </p>
         </div>
 
-        {SECCIONES.map((seccion) => renderTablaFilas(seccion.id, { soloImpresion: true }))}
+        {filasConDatos(filasGuardia, ['nombreApellido', 'numTicket']).length > 0 && (
+          <table className={styles.tablaPrint}>
+            <caption>Guardia</caption>
+            <thead>
+              <tr>
+                <th>Nombre y apellido</th>
+                <th>Nº ticket</th>
+                <th>Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filasConDatos(filasGuardia, ['nombreApellido', 'numTicket']).map((f, i) => (
+                <tr key={i}>
+                  <td>{f.nombreApellido || '—'}</td>
+                  <td>{f.numTicket || '—'}</td>
+                  <td>{formatPesos(parseMonto(f.importe))}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2}>Total Guardia</td>
+                <td>{formatPesos(totalGuardiaAcordeon)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
+
+        {filasConDatos(filasInternaciones, ['paciente', 'numeroInternado', 'concepto', 'recibo'])
+          .length > 0 && (
+          <table className={styles.tablaPrint}>
+            <caption>Internaciones</caption>
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Número internado</th>
+                <th>Concepto</th>
+                <th>Recibo</th>
+                <th>Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filasConDatos(filasInternaciones, [
+                'paciente',
+                'numeroInternado',
+                'concepto',
+                'recibo',
+              ]).map((f, i) => (
+                <tr key={i}>
+                  <td>{f.paciente || '—'}</td>
+                  <td>{f.numeroInternado || '—'}</td>
+                  <td>{f.concepto || '—'}</td>
+                  <td>{f.recibo || '—'}</td>
+                  <td>{formatPesos(parseMonto(f.importe))}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={4}>Total Internaciones</td>
+                <td>{formatPesos(totalInternaciones)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
+
+        {filasConDatos(filasRendicion, ['paciente', 'concepto', 'recibo', 'factura']).length >
+          0 && (
+          <table className={styles.tablaPrint}>
+            <caption>Rendición Varios</caption>
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Concepto</th>
+                <th>Recibo</th>
+                <th>Factura</th>
+                <th>Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filasConDatos(filasRendicion, [
+                'paciente',
+                'concepto',
+                'recibo',
+                'factura',
+              ]).map((f, i) => (
+                <tr key={i}>
+                  <td>{f.paciente || '—'}</td>
+                  <td>{f.concepto || '—'}</td>
+                  <td>{f.recibo || '—'}</td>
+                  <td>{f.factura || '—'}</td>
+                  <td>{formatPesos(parseMonto(f.importe))}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={4}>Total Varios</td>
+                <td>{formatPesos(totalRendicion)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
+
+        {(dolares.nombreApellido ||
+          dolares.numRecibo ||
+          dolares.importeUSD ||
+          dolares.cambioDelDia) && (
+          <table className={styles.tablaPrint}>
+            <caption>Dólares en Caución</caption>
+            <tbody>
+              <tr>
+                <td>Nombre</td>
+                <td>{dolares.nombreApellido || '—'}</td>
+              </tr>
+              <tr>
+                <td>Nº recibo</td>
+                <td>{dolares.numRecibo || '—'}</td>
+              </tr>
+              <tr>
+                <td>Importe USD</td>
+                <td>{formatUSD(totalDolaresUSD)}</td>
+              </tr>
+              <tr>
+                <td>Cambio del día</td>
+                <td>{formatPesos(parseMonto(dolares.cambioDelDia))}</td>
+              </tr>
+              <tr>
+                <td>Total ARS</td>
+                <td>{formatPesos(totalDolaresARS)}</td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+
+        {filasConDatos(filasCheques, ['banco', 'nroCheque', 'fechaCobro']).length > 0 && (
+          <table className={styles.tablaPrint}>
+            <caption>Cheques</caption>
+            <thead>
+              <tr>
+                <th>Banco</th>
+                <th>Nro. cheque</th>
+                <th>Fecha cobro</th>
+                <th>Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filasConDatos(filasCheques, ['banco', 'nroCheque', 'fechaCobro']).map(
+                (f, i) => (
+                  <tr key={i}>
+                    <td>{f.banco || '—'}</td>
+                    <td>{f.nroCheque || '—'}</td>
+                    <td>{formatFecha(f.fechaCobro)}</td>
+                    <td>{formatPesos(parseMonto(f.importe))}</td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={3}>Total Cheques</td>
+                <td>{formatPesos(totalCheques)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
+
+        {observaciones.trim() && (
+          <div className={styles.printObs}>
+            <strong>Observaciones:</strong>
+            <p>{observaciones}</p>
+          </div>
+        )}
 
         <div className={styles.resumenPrint}>
           <h3>Resumen General del Turno</h3>
           <table className={styles.tablaResumenPrint}>
             <tbody>
               <tr>
-                <td>Guardia</td>
-                <td>{formatPesos(totales.guardia)}</td>
+                <td>Total de guardia (superior)</td>
+                <td>{formatPesos(totalGuardiaSuperiorNum)}</td>
+              </tr>
+              <tr>
+                <td>Guardia (acordeón)</td>
+                <td>{formatPesos(totalGuardiaAcordeon)}</td>
               </tr>
               <tr>
                 <td>Internaciones</td>
-                <td>− {formatPesos(totales.internaciones)}</td>
+                <td>{formatPesos(totalInternaciones)}</td>
               </tr>
               <tr>
                 <td>Rendición Varios</td>
-                <td>− {formatPesos(totales.rendicion)}</td>
+                <td>{formatPesos(totalRendicion)}</td>
               </tr>
               <tr>
                 <td>
-                  Dólares en Caución ({formatUSD(totales.dolares)}
-                  {dolaresARS != null ? ` = ${formatPesos(dolaresARS)}` : ''})
+                  Dólares en Caución ({formatUSD(totalDolaresUSD)} ={' '}
+                  {formatPesos(totalDolaresARS)})
                 </td>
-                <td>− {formatPesos(dolaresARS ?? 0)}</td>
+                <td>{formatPesos(totalDolaresARS)}</td>
               </tr>
               <tr>
                 <td>Cheques</td>
-                <td>− {formatPesos(totales.cheques)}</td>
+                <td>{formatPesos(totalCheques)}</td>
+              </tr>
+              <tr>
+                <td>Total acordeones</td>
+                <td>{formatPesos(totalAcordeones)}</td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
-                <td>Total General (ARS)</td>
-                <td>{formatPesos(totalGeneral)}</td>
+                <td>Total General (ARS) — Diferencia</td>
+                <td>{formatDiferencia(diferencia)}</td>
               </tr>
             </tfoot>
           </table>
