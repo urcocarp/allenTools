@@ -66,6 +66,13 @@ const formatDiferencia = (n) => {
   return n > 0 ? `+${pesos}` : `-${pesos}`;
 };
 
+const formatDiferenciaUSD = (n) => {
+  if (n == null || Number.isNaN(n) || n === 0) return 'USD 0,00';
+  const monto = n < 0 ? -n : n;
+  const usd = formatUSD(monto);
+  return n > 0 ? `+${usd}` : `-${usd}`;
+};
+
 const formatFecha = (iso) => {
   if (!iso) return '–';
   const [y, m, d] = iso.split('-');
@@ -90,6 +97,7 @@ const Caja = () => {
   const [numeroPrecinto, setNumeroPrecinto] = useState('');
   const [turno, setTurno] = useState('');
   const [totalGuardiaSuperior, setTotalGuardiaSuperior] = useState('');
+  const [totalDolaresSuperior, setTotalDolaresSuperior] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [seccionesAbiertas, setSeccionesAbiertas] = useState({
     guardia: true,
@@ -109,6 +117,11 @@ const Caja = () => {
   const totalGuardiaSuperiorNum = useMemo(
     () => parseMonto(totalGuardiaSuperior) ?? 0,
     [totalGuardiaSuperior],
+  );
+
+  const totalDolaresSuperiorNum = useMemo(
+    () => parseMonto(totalDolaresSuperior) ?? 0,
+    [totalDolaresSuperior],
   );
 
   const totalGuardiaAcordeon = useMemo(
@@ -148,20 +161,18 @@ const Caja = () => {
       totalGuardiaAcordeon +
       totalInternaciones +
       totalRendicion +
-      totalDolaresARS +
       totalCheques,
-    [
-      totalGuardiaAcordeon,
-      totalInternaciones,
-      totalRendicion,
-      totalDolaresARS,
-      totalCheques,
-    ],
+    [totalGuardiaAcordeon, totalInternaciones, totalRendicion, totalCheques],
   );
 
   const diferencia = useMemo(
     () => totalGuardiaSuperiorNum - totalAcordeones,
     [totalGuardiaSuperiorNum, totalAcordeones],
+  );
+
+  const diferenciaDolares = useMemo(
+    () => totalDolaresSuperiorNum - totalDolaresUSD,
+    [totalDolaresSuperiorNum, totalDolaresUSD],
   );
 
   const toggleSeccion = (id) => {
@@ -191,6 +202,7 @@ const Caja = () => {
     setNumeroPrecinto('');
     setTurno('');
     setTotalGuardiaSuperior('');
+    setTotalDolaresSuperior('');
     setObservaciones('');
     setFilasGuardia([{ ...FILA_GUARDIA }]);
     setFilasInternaciones([{ ...FILA_INTERNACIONES }]);
@@ -351,16 +363,29 @@ const Caja = () => {
           </div>
         </div>
 
-        <div className={styles.totalGuardiaSuperiorRow}>
-          <label htmlFor="total-guardia-superior">Total de guardia</label>
-          <input
-            id="total-guardia-superior"
-            type="text"
-            inputMode="decimal"
-            placeholder="$ 0,00"
-            value={totalGuardiaSuperior}
-            onChange={(e) => setTotalGuardiaSuperior(e.target.value)}
-          />
+        <div className={styles.totalesSuperioresRow}>
+          <div className={styles.totalGuardiaSuperiorRow}>
+            <label htmlFor="total-guardia-superior">Total de guardia</label>
+            <input
+              id="total-guardia-superior"
+              type="text"
+              inputMode="decimal"
+              placeholder="$ 0,00"
+              value={totalGuardiaSuperior}
+              onChange={(e) => setTotalGuardiaSuperior(e.target.value)}
+            />
+          </div>
+          <div className={`${styles.totalGuardiaSuperiorRow} ${styles.totalDolaresSuperiorRow}`}>
+            <label htmlFor="total-dolares-superior">Total de dólares</label>
+            <input
+              id="total-dolares-superior"
+              type="text"
+              inputMode="decimal"
+              placeholder="USD 0,00"
+              value={totalDolaresSuperior}
+              onChange={(e) => setTotalDolaresSuperior(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -926,7 +951,7 @@ const Caja = () => {
                 {formatUSD(totalDolaresUSD)} ({formatPesos(totalDolaresARS)} ARS)
               </small>
             </span>
-            <strong>{formatPesos(totalDolaresARS)}</strong>
+            <strong>{formatUSD(totalDolaresUSD)}</strong>
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotPurple}`} />
@@ -937,6 +962,10 @@ const Caja = () => {
         <div className={styles.totalGeneralBar}>
           <span>Total General (ARS)</span>
           <strong>{formatDiferencia(diferencia)}</strong>
+        </div>
+        <div className={`${styles.totalGeneralBar} ${styles.totalDolaresBar}`}>
+          <span>Diferencia dólares</span>
+          <strong>{formatDiferenciaUSD(diferenciaDolares)}</strong>
         </div>
       </div>
 
@@ -957,6 +986,10 @@ const Caja = () => {
           <p>
             <strong>Total de guardia (superior):</strong>{' '}
             {formatPesos(totalGuardiaSuperiorNum)}
+          </p>
+          <p>
+            <strong>Total de dólares (superior):</strong>{' '}
+            {formatUSD(totalDolaresSuperiorNum)}
           </p>
         </div>
 
@@ -1143,6 +1176,10 @@ const Caja = () => {
                 <td>{formatPesos(totalGuardiaSuperiorNum)}</td>
               </tr>
               <tr>
+                <td>Total de dólares (superior)</td>
+                <td>{formatUSD(totalDolaresSuperiorNum)}</td>
+              </tr>
+              <tr>
                 <td>Guardia (acordeón)</td>
                 <td>{formatPesos(totalGuardiaAcordeon)}</td>
               </tr>
@@ -1159,14 +1196,14 @@ const Caja = () => {
                   Dólares en Caución ({formatUSD(totalDolaresUSD)} ={' '}
                   {formatPesos(totalDolaresARS)})
                 </td>
-                <td>{formatPesos(totalDolaresARS)}</td>
+                <td>{formatUSD(totalDolaresUSD)}</td>
               </tr>
               <tr>
                 <td>Cheques</td>
                 <td>{formatPesos(totalCheques)}</td>
               </tr>
               <tr>
-                <td>Total acordeones</td>
+                <td>Total acordeones (ARS)</td>
                 <td>{formatPesos(totalAcordeones)}</td>
               </tr>
             </tbody>
@@ -1174,6 +1211,10 @@ const Caja = () => {
               <tr>
                 <td>Total General (ARS) — Diferencia</td>
                 <td>{formatDiferencia(diferencia)}</td>
+              </tr>
+              <tr>
+                <td>Diferencia dólares</td>
+                <td>{formatDiferenciaUSD(diferenciaDolares)}</td>
               </tr>
             </tfoot>
           </table>
