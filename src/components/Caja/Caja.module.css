@@ -146,6 +146,13 @@
   box-shadow: 0 0 0 2px rgba(30, 91, 189, 0.1);
 }
 
+.totalesSuperioresRow {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
 .totalGuardiaSuperiorRow {
   display: flex;
   align-items: center;
@@ -177,6 +184,16 @@
 .totalGuardiaSuperiorRow input:focus {
   border-color: #60a5fa;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.totalDolaresSuperiorRow input {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.totalDolaresSuperiorRow input:focus {
+  border-color: #4ade80;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.14);
 }
 
 .acordeones {
@@ -502,6 +519,10 @@
 .totalGeneralBar strong {
   font-size: 1.15rem;
   font-variant-numeric: tabular-nums;
+}
+
+.totalDolaresBar {
+  background: #15803d;
 }
 
 .btnPrint {
