@@ -191,13 +191,13 @@ const Caja = () => {
     [totalGuardiaAcordeon, totalCheques],
   );
 
-  // Internación y rendición son el "qué"; el ticket es el "cómo".
-  // Si Juan paga la internación con el ticket 7879, ese monto está en ambos
-  // acordeones y no debe sumar otra vez contra el total de guardia del sistema.
+  // Internación no entra en el total de guardia del sistema: si se cobró
+  // con un ticket, hay que sumarla al esperado para que se cancele.
+  // Rendición varios sí forma parte de esos tickets / de la guardia: no
+  // se vuelve a pedir en la diferencia.
   const totalEsperadoARS = useMemo(
-    () =>
-      totalGuardiaSuperiorNum + totalInternaciones + totalRendicion,
-    [totalGuardiaSuperiorNum, totalInternaciones, totalRendicion],
+    () => totalGuardiaSuperiorNum + totalInternaciones,
+    [totalGuardiaSuperiorNum, totalInternaciones],
   );
 
   const diferencia = useMemo(
