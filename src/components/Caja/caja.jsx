@@ -191,9 +191,18 @@ const Caja = () => {
     [totalGuardiaAcordeon, totalCheques],
   );
 
+  // Internación y rendición son el "qué"; el ticket es el "cómo".
+  // Si Juan paga la internación con el ticket 7879, ese monto está en ambos
+  // acordeones y no debe sumar otra vez contra el total de guardia del sistema.
+  const totalEsperadoARS = useMemo(
+    () =>
+      totalGuardiaSuperiorNum + totalInternaciones + totalRendicion,
+    [totalGuardiaSuperiorNum, totalInternaciones, totalRendicion],
+  );
+
   const diferencia = useMemo(
-    () => totalDepositado - totalGuardiaSuperiorNum,
-    [totalDepositado, totalGuardiaSuperiorNum],
+    () => totalDepositado - totalEsperadoARS,
+    [totalDepositado, totalEsperadoARS],
   );
 
   const diferenciaDolares = useMemo(
@@ -1100,12 +1109,12 @@ const Caja = () => {
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotGreen}`} />
-            <span>Internaciones (qué se cobró)</span>
+            <span>Internaciones (qué se cobró; ya va en el ticket)</span>
             <strong>{formatPesos(totalInternaciones)}</strong>
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotOrange}`} />
-            <span>Rendición Varios (qué se cobró)</span>
+            <span>Rendición Varios (qué se cobró; ya va en el ticket)</span>
             <strong>{formatPesos(totalRendicion)}</strong>
           </li>
           <li>
