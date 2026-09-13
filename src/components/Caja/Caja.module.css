@@ -346,6 +346,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+.nombreFijo {
+  display: flex;
+  align-items: center;
+  min-height: 2.2rem;
+  padding: 0.5rem 0.55rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+
 .btnRemove {
   display: inline-flex;
   align-items: center;
@@ -421,6 +434,18 @@
 .totalSeccionOrange { background: #fff7ed; color: #c2410c; }
 .totalSeccionYellow { background: #fefce8; color: #a16207; }
 .totalSeccionPurple { background: #f5f3ff; color: #6d28d9; }
+
+.totalesTicketBox {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.totalSeccionImputa {
+  background: #fff7ed;
+  color: #c2410c;
+}
 
 .obsLabel {
   display: block;
@@ -503,6 +528,46 @@
 .dotYellow { background: #ca8a04; }
 .dotPurple { background: #7c3aed; }
 
+.totalesRendirGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.totalesRendirGrid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.55rem;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.totalesRendirGrid span {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.totalesRendirGrid strong {
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  color: #111827;
+}
+
+.totalARendirCelda {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+.totalDepositadoBar {
+  background: #334155;
+}
+
 .totalGeneralBar {
   display: flex;
   justify-content: space-between;
@@ -572,6 +637,10 @@
     grid-template-columns: 1fr 1fr;
   }
 
+  .totalesRendirGrid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
   .tablaHeaderGreen,
   .filaRowInternaciones {
     grid-template-columns: 1fr 1fr 1fr;
@@ -606,6 +675,10 @@
     grid-template-columns: 1fr;
   }
 
+  .totalesRendirGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .topBar {
     flex-direction: column;
     align-items: stretch;
@@ -618,32 +691,48 @@
   }
 
   .wrapper {
+    display: flex;
+    flex-direction: column;
     padding: 0;
+    color: #111;
   }
 
   .printHeader {
+    order: 1;
     display: flex;
     align-items: center;
-    gap: 1rem;
-    border-bottom: 2px solid #001153;
-    padding-bottom: 0.75rem;
-    margin-bottom: 1rem;
+    gap: 0.55rem;
+    border-bottom: 1.5px solid #001153;
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .printLogo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .titulo {
+    font-size: 1.05rem;
   }
 
   .printTimestamp {
     display: block;
+    font-size: 0.7rem;
+    margin: 0.1rem 0 0;
   }
 
   .printDetalle {
+    order: 2;
     display: block;
   }
 
   .printDatosTurno {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.35rem 1.5rem;
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 0.15rem 0.75rem;
+    margin-bottom: 0.45rem;
+    font-size: 0.72rem;
   }
 
   .printDatosTurno p {
@@ -653,22 +742,21 @@
   .tablaPrint {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 1rem;
-    font-size: 0.85rem;
-    page-break-inside: avoid;
+    margin-bottom: 0.4rem;
+    font-size: 0.68rem;
   }
 
   .tablaPrint caption {
     text-align: left;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.72rem;
     color: #001153;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.15rem;
   }
 
   .tablaPrint th,
   .tablaPrint td {
-    padding: 0.35rem 0.5rem;
+    padding: 0.12rem 0.3rem;
     border: 1px solid #ccc;
     text-align: left;
   }
@@ -682,7 +770,7 @@
 
   .tablaPrint thead th {
     background: #f0f4fa;
-    font-size: 0.75rem;
+    font-size: 0.62rem;
     text-transform: uppercase;
   }
 
@@ -692,51 +780,79 @@
   }
 
   .printObs {
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.72rem;
   }
 
   .printObs p {
-    margin: 0.35rem 0 0;
+    margin: 0.15rem 0 0;
     white-space: pre-wrap;
   }
 
-  .resumenPrint {
-    margin-top: 1rem;
-    page-break-inside: avoid;
+  .resumenGeneral {
+    order: 3;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.45rem 0.55rem;
+    margin-top: 0.35rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  .resumenPrint h3 {
-    margin: 0 0 0.5rem;
-    font-size: 0.95rem;
+  .resumenGeneral h3 {
+    margin: 0 0 0.4rem;
+    font-size: 0.78rem;
   }
 
-  .tablaResumenPrint {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
+  .resumenGeneral h3 svg {
+    width: 14px;
+    height: 14px;
   }
 
-  .tablaResumenPrint td {
-    padding: 0.4rem 0.6rem;
-    border: 1px solid #ccc;
+  .totalesRendirGrid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.25rem;
+    margin-bottom: 0.4rem;
   }
 
-  .tablaResumenPrint td:last-child {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    width: 35%;
+  .totalesRendirGrid > div {
+    padding: 0.28rem 0.35rem;
   }
 
-  .tablaResumenPrint tfoot td {
-    font-weight: 700;
-    font-size: 1rem;
-    background: #e8f0fb;
-    border-top: 2px solid #1e5bbd;
+  .totalesRendirGrid span {
+    font-size: 0.52rem;
+  }
+
+  .totalesRendirGrid strong {
+    font-size: 0.72rem;
+  }
+
+  .resumenLista {
+    gap: 0.18rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .resumenLista li {
+    font-size: 0.72rem;
+  }
+
+  .resumenLista li small {
+    font-size: 0.58rem;
+  }
+
+  .totalGeneralBar {
+    margin-top: 0.28rem;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.75rem;
+    border-radius: 5px;
+  }
+
+  .totalGeneralBar strong {
+    font-size: 0.88rem;
   }
 
   @page {
     size: A4;
-    margin: 12mm;
+    margin: 8mm;
   }
 }

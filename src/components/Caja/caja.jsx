@@ -1,10 +1,11 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import styles from './Caja.module.css';
 import logo from '../../assets/allende.jpg';
 
 const TURNOS = ['Mañana', 'Tarde', 'Noche'];
 
 const FILA_GUARDIA = { nombreApellido: '', numTicket: '', importe: '' };
+const FILA_EFECTIVO_DEPOSITO = { numTicket: '', importe: '' };
 const FILA_INTERNACIONES = {
   paciente: '',
   numeroInternado: '',
@@ -108,6 +109,9 @@ const Caja = () => {
     observaciones: false,
   });
 
+  const [filaEfectivoDeposito, setFilaEfectivoDeposito] = useState({
+    ...FILA_EFECTIVO_DEPOSITO,
+  });
   const [filasGuardia, setFilasGuardia] = useState([{ ...FILA_GUARDIA }]);
   const [filasInternaciones, setFilasInternaciones] = useState([{ ...FILA_INTERNACIONES }]);
   const [filasRendicion, setFilasRendicion] = useState([{ ...FILA_RENDICION }]);
@@ -125,8 +129,9 @@ const Caja = () => {
   );
 
   const totalGuardiaAcordeon = useMemo(
-    () => sumarImportes(filasGuardia),
-    [filasGuardia],
+    () =>
+      (parseMonto(filaEfectivoDeposito.importe) ?? 0) + sumarImportes(filasGuardia),
+    [filaEfectivoDeposito, filasGuardia],
   );
 
   const totalInternaciones = useMemo(
@@ -156,23 +161,44 @@ const Caja = () => {
     return usd * cambio;
   }, [dolares.importeUSD, dolares.cambioDelDia]);
 
-  const totalAcordeones = useMemo(
+  const imputadoSobreEfectivo = useMemo(
+    () => totalInternaciones + totalRendicion,
+    [totalInternaciones, totalRendicion],
+  );
+
+  const detalleTicketNeto = useMemo(
+    () => totalGuardiaAcordeon - imputadoSobreEfectivo,
+    [totalGuardiaAcordeon, imputadoSobreEfectivo],
+  );
+
+  const totalARendir = useMemo(
     () =>
-      totalGuardiaAcordeon +
+      detalleTicketNeto +
       totalInternaciones +
       totalRendicion +
       totalCheques,
-    [totalGuardiaAcordeon, totalInternaciones, totalRendicion, totalCheques],
+    [
+      detalleTicketNeto,
+      totalInternaciones,
+      totalRendicion,
+      totalCheques,
+    ],
+  );
+
+  // Pesos solamente: los dólares no entran acá. Se cruzan USD arriba vs acordeón.
+  const totalDepositado = useMemo(
+    () => totalGuardiaAcordeon + totalCheques,
+    [totalGuardiaAcordeon, totalCheques],
   );
 
   const diferencia = useMemo(
-    () => totalGuardiaSuperiorNum - totalAcordeones,
-    [totalGuardiaSuperiorNum, totalAcordeones],
+    () => totalDepositado - totalGuardiaSuperiorNum,
+    [totalDepositado, totalGuardiaSuperiorNum],
   );
 
   const diferenciaDolares = useMemo(
-    () => totalDolaresSuperiorNum - totalDolaresUSD,
-    [totalDolaresSuperiorNum, totalDolaresUSD],
+    () => totalDolaresUSD - totalDolaresSuperiorNum,
+    [totalDolaresUSD, totalDolaresSuperiorNum],
   );
 
   const toggleSeccion = (id) => {
@@ -190,6 +216,66 @@ const Caja = () => {
     setSeccionesAbiertas((prev) => ({ ...prev, [seccionId]: true }));
   };
 
+  const focusNuevaFilaRef = useRef(null);
+
+  const filaEstaVacia = (fila, camposTexto) =>
+    camposTexto.every((c) => !String(fila[c] ?? '').trim()) &&
+    parseMonto(fila.importe) == null;
+
+  const agregarFilaEnter = (setter, vacio, seccionId, camposTexto, focusAttr) => {
+    setter((prev) => {
+      const ultima = prev[prev.length - 1];
+      if (ultima && filaEstaVacia(ultima, camposTexto)) return prev;
+      return [...prev, { ...vacio }];
+    });
+    setSeccionesAbiertas((prev) => ({ ...prev, [seccionId]: true }));
+    focusNuevaFilaRef.current = focusAttr;
+  };
+
+  useEffect(() => {
+    const attr = focusNuevaFilaRef.current;
+    if (!attr) return;
+    focusNuevaFilaRef.current = null;
+    const inputs = document.querySelectorAll(`[${attr}]`);
+    inputs[inputs.length - 1]?.focus();
+  }, [filasGuardia, filasInternaciones, filasRendicion]);
+
+  const onEnterImporteTicket = (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    agregarFilaEnter(
+      setFilasGuardia,
+      FILA_GUARDIA,
+      'guardia',
+      ['nombreApellido', 'numTicket'],
+      'data-fila-ticket-nombre',
+    );
+  };
+
+  const onEnterImporteInternacion = (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    agregarFilaEnter(
+      setFilasInternaciones,
+      FILA_INTERNACIONES,
+      'internaciones',
+      ['paciente', 'numeroInternado', 'concepto', 'recibo'],
+      'data-fila-internacion-paciente',
+    );
+  };
+
+  const onEnterImporteRendicion = (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    agregarFilaEnter(
+      setFilasRendicion,
+      FILA_RENDICION,
+      'rendicion',
+      ['paciente', 'concepto', 'recibo', 'factura'],
+      'data-fila-rendicion-paciente',
+    );
+  };
+
   const removeFila = (setter, vacio, index) => {
     setter((prev) =>
       prev.length <= 1 ? [{ ...vacio }] : prev.filter((_, i) => i !== index),
@@ -204,6 +290,7 @@ const Caja = () => {
     setTotalGuardiaSuperior('');
     setTotalDolaresSuperior('');
     setObservaciones('');
+    setFilaEfectivoDeposito({ ...FILA_EFECTIVO_DEPOSITO });
     setFilasGuardia([{ ...FILA_GUARDIA }]);
     setFilasInternaciones([{ ...FILA_INTERNACIONES }]);
     setFilasRendicion([{ ...FILA_RENDICION }]);
@@ -389,7 +476,7 @@ const Caja = () => {
         </div>
       </div>
 
-      <div className={styles.acordeones}>
+      <div className={`${styles.acordeones} ${styles.noPrint}`}>
         {/* GUARDIA */}
         <div className={`${styles.acordeon} ${styles.acordeonBlue}`}>
           <button
@@ -407,8 +494,8 @@ const Caja = () => {
               </svg>
             </span>
             <span className={styles.acordeonTitulos}>
-              <strong>Guardia</strong>
-              <small>Cobros del servicio de guardia</small>
+              <strong>Detalle Ticket</strong>
+              <small>Tickets de cobro de guardia</small>
             </span>
             <span className={styles.acordeonTotal}>{formatPesos(totalGuardiaAcordeon)}</span>
             <span className={styles.acordeonChevron}>
@@ -425,11 +512,44 @@ const Caja = () => {
               <span className={styles.colAccion} />
             </div>
             <ul className={styles.filasList}>
+              <li className={`${styles.filaRow} ${styles.filaRowGuardia}`}>
+                <span className={styles.nombreFijo}>EFECTIVO/DEPOSITO</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Ticket"
+                  aria-label="Nº ticket efectivo/depósito"
+                  value={filaEfectivoDeposito.numTicket}
+                  onChange={(e) =>
+                    setFilaEfectivoDeposito((prev) => ({
+                      ...prev,
+                      numTicket: e.target.value,
+                    }))
+                  }
+                />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  aria-label="Importe efectivo/depósito"
+                  value={filaEfectivoDeposito.importe}
+                  onChange={(e) =>
+                    setFilaEfectivoDeposito((prev) => ({
+                      ...prev,
+                      importe: e.target.value,
+                    }))
+                  }
+                  className={styles.inputImporte}
+                  onKeyDown={onEnterImporteTicket}
+                />
+                <span className={styles.colAccion} />
+              </li>
               {filasGuardia.map((fila, index) => (
                 <li key={index} className={`${styles.filaRow} ${styles.filaRowGuardia}`}>
                   <input
                     type="text"
                     placeholder="Nombre"
+                    data-fila-ticket-nombre=""
                     value={fila.nombreApellido}
                     onChange={(e) =>
                       updateFila(setFilasGuardia, index, 'nombreApellido', e.target.value)
@@ -453,10 +573,11 @@ const Caja = () => {
                       updateFila(setFilasGuardia, index, 'importe', e.target.value)
                     }
                     className={styles.inputImporte}
+                    onKeyDown={onEnterImporteTicket}
                   />
                   {renderBtnRemove(
                     () => removeFila(setFilasGuardia, FILA_GUARDIA, index),
-                    `Quitar fila ${index + 1} guardia`,
+                    `Quitar fila ${index + 1} detalle ticket`,
                   )}
                 </li>
               ))}
@@ -469,9 +590,23 @@ const Caja = () => {
               >
                 + Agregar fila
               </button>
-              <div className={`${styles.totalSeccion} ${styles.totalSeccionBlue}`}>
-                <span>Total Guardia</span>
-                <strong>{formatPesos(totalGuardiaAcordeon)}</strong>
+              <div className={styles.totalesTicketBox}>
+                <div className={`${styles.totalSeccion} ${styles.totalSeccionBlue}`}>
+                  <span>Total Detalle Ticket</span>
+                  <strong>{formatPesos(totalGuardiaAcordeon)}</strong>
+                </div>
+                {imputadoSobreEfectivo > 0 && (
+                  <>
+                    <div className={`${styles.totalSeccion} ${styles.totalSeccionImputa}`}>
+                      <span>Menos internaciones y rendiciones</span>
+                      <strong>-{formatPesos(imputadoSobreEfectivo)}</strong>
+                    </div>
+                    <div className={`${styles.totalSeccion} ${styles.totalSeccionBlue}`}>
+                      <span>Neto efectivo / tickets</span>
+                      <strong>{formatPesos(detalleTicketNeto)}</strong>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -519,6 +654,7 @@ const Caja = () => {
                   <input
                     type="text"
                     value={fila.paciente}
+                    data-fila-internacion-paciente=""
                     onChange={(e) =>
                       updateFila(setFilasInternaciones, index, 'paciente', e.target.value)
                     }
@@ -552,6 +688,7 @@ const Caja = () => {
                       updateFila(setFilasInternaciones, index, 'importe', e.target.value)
                     }
                     className={styles.inputImporte}
+                    onKeyDown={onEnterImporteInternacion}
                   />
                   {renderBtnRemove(
                     () => removeFila(setFilasInternaciones, FILA_INTERNACIONES, index),
@@ -620,6 +757,7 @@ const Caja = () => {
                   <input
                     type="text"
                     value={fila.paciente}
+                    data-fila-rendicion-paciente=""
                     onChange={(e) =>
                       updateFila(setFilasRendicion, index, 'paciente', e.target.value)
                     }
@@ -653,6 +791,7 @@ const Caja = () => {
                       updateFila(setFilasRendicion, index, 'importe', e.target.value)
                     }
                     className={styles.inputImporte}
+                    onKeyDown={onEnterImporteRendicion}
                   />
                   {renderBtnRemove(
                     () => removeFila(setFilasRendicion, FILA_RENDICION, index),
@@ -917,7 +1056,7 @@ const Caja = () => {
         </div>
       </div>
 
-      <div className={`${styles.resumenGeneral} ${styles.noPrint}`}>
+      <div className={styles.resumenGeneral}>
         <h3>
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path
@@ -927,20 +1066,46 @@ const Caja = () => {
           </svg>
           Resumen General del Turno
         </h3>
+        <div className={styles.totalesRendirGrid}>
+          <div>
+            <span>Total guardia (sistema)</span>
+            <strong>{formatPesos(totalGuardiaSuperiorNum)}</strong>
+          </div>
+          <div>
+            <span>Total internación</span>
+            <strong>{formatPesos(totalInternaciones)}</strong>
+          </div>
+          <div>
+            <span>Rendición varios</span>
+            <strong>{formatPesos(totalRendicion)}</strong>
+          </div>
+          <div>
+            <span>Cheques</span>
+            <strong>{formatPesos(totalCheques)}</strong>
+          </div>
+          <div>
+            <span>Dólares en caución</span>
+            <strong>{formatPesos(totalDolaresARS)}</strong>
+          </div>
+          <div className={styles.totalARendirCelda}>
+            <span>Total a rendir</span>
+            <strong>{formatPesos(totalARendir)}</strong>
+          </div>
+        </div>
         <ul className={styles.resumenLista}>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotBlue}`} />
-            <span>Guardia</span>
+            <span>Detalle Ticket (cómo se cobró)</span>
             <strong>{formatPesos(totalGuardiaAcordeon)}</strong>
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotGreen}`} />
-            <span>Internaciones</span>
+            <span>Internaciones (qué se cobró)</span>
             <strong>{formatPesos(totalInternaciones)}</strong>
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotOrange}`} />
-            <span>Rendición Varios</span>
+            <span>Rendición Varios (qué se cobró)</span>
             <strong>{formatPesos(totalRendicion)}</strong>
           </li>
           <li>
@@ -951,7 +1116,7 @@ const Caja = () => {
                 {formatUSD(totalDolaresUSD)} ({formatPesos(totalDolaresARS)} ARS)
               </small>
             </span>
-            <strong>{formatUSD(totalDolaresUSD)}</strong>
+            <strong>{formatPesos(totalDolaresARS)}</strong>
           </li>
           <li>
             <span className={`${styles.resumenDot} ${styles.dotPurple}`} />
@@ -959,8 +1124,12 @@ const Caja = () => {
             <strong>{formatPesos(totalCheques)}</strong>
           </li>
         </ul>
+        <div className={`${styles.totalGeneralBar} ${styles.totalDepositadoBar}`}>
+          <span>Total depositado</span>
+          <strong>{formatPesos(totalDepositado)}</strong>
+        </div>
         <div className={styles.totalGeneralBar}>
-          <span>Total General (ARS)</span>
+          <span>Diferencia</span>
           <strong>{formatDiferencia(diferencia)}</strong>
         </div>
         <div className={`${styles.totalGeneralBar} ${styles.totalDolaresBar}`}>
@@ -983,19 +1152,13 @@ const Caja = () => {
           <p>
             <strong>Turno:</strong> {turno || '—'}
           </p>
-          <p>
-            <strong>Total de guardia (superior):</strong>{' '}
-            {formatPesos(totalGuardiaSuperiorNum)}
-          </p>
-          <p>
-            <strong>Total de dólares (superior):</strong>{' '}
-            {formatUSD(totalDolaresSuperiorNum)}
-          </p>
         </div>
 
-        {filasConDatos(filasGuardia, ['nombreApellido', 'numTicket']).length > 0 && (
+        {(filaEfectivoDeposito.numTicket.trim() ||
+          parseMonto(filaEfectivoDeposito.importe) != null ||
+          filasConDatos(filasGuardia, ['nombreApellido', 'numTicket']).length > 0) && (
           <table className={styles.tablaPrint}>
-            <caption>Guardia</caption>
+            <caption>Detalle Ticket</caption>
             <thead>
               <tr>
                 <th>Nombre y apellido</th>
@@ -1004,6 +1167,14 @@ const Caja = () => {
               </tr>
             </thead>
             <tbody>
+              {(filaEfectivoDeposito.numTicket.trim() ||
+                parseMonto(filaEfectivoDeposito.importe) != null) && (
+                <tr>
+                  <td>EFECTIVO/DEPOSITO</td>
+                  <td>{filaEfectivoDeposito.numTicket || '—'}</td>
+                  <td>{formatPesos(parseMonto(filaEfectivoDeposito.importe))}</td>
+                </tr>
+              )}
               {filasConDatos(filasGuardia, ['nombreApellido', 'numTicket']).map((f, i) => (
                 <tr key={i}>
                   <td>{f.nombreApellido || '—'}</td>
@@ -1014,7 +1185,7 @@ const Caja = () => {
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={2}>Total Guardia</td>
+                <td colSpan={2}>Total Detalle Ticket</td>
                 <td>{formatPesos(totalGuardiaAcordeon)}</td>
               </tr>
             </tfoot>
@@ -1166,59 +1337,6 @@ const Caja = () => {
             <p>{observaciones}</p>
           </div>
         )}
-
-        <div className={styles.resumenPrint}>
-          <h3>Resumen General del Turno</h3>
-          <table className={styles.tablaResumenPrint}>
-            <tbody>
-              <tr>
-                <td>Total de guardia (superior)</td>
-                <td>{formatPesos(totalGuardiaSuperiorNum)}</td>
-              </tr>
-              <tr>
-                <td>Total de dólares (superior)</td>
-                <td>{formatUSD(totalDolaresSuperiorNum)}</td>
-              </tr>
-              <tr>
-                <td>Guardia (acordeón)</td>
-                <td>{formatPesos(totalGuardiaAcordeon)}</td>
-              </tr>
-              <tr>
-                <td>Internaciones</td>
-                <td>{formatPesos(totalInternaciones)}</td>
-              </tr>
-              <tr>
-                <td>Rendición Varios</td>
-                <td>{formatPesos(totalRendicion)}</td>
-              </tr>
-              <tr>
-                <td>
-                  Dólares en Caución ({formatUSD(totalDolaresUSD)} ={' '}
-                  {formatPesos(totalDolaresARS)})
-                </td>
-                <td>{formatUSD(totalDolaresUSD)}</td>
-              </tr>
-              <tr>
-                <td>Cheques</td>
-                <td>{formatPesos(totalCheques)}</td>
-              </tr>
-              <tr>
-                <td>Total acordeones (ARS)</td>
-                <td>{formatPesos(totalAcordeones)}</td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                <td>Total General (ARS) — Diferencia</td>
-                <td>{formatDiferencia(diferencia)}</td>
-              </tr>
-              <tr>
-                <td>Diferencia dólares</td>
-                <td>{formatDiferenciaUSD(diferenciaDolares)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
       </div>
     </section>
   );
