@@ -171,7 +171,7 @@ const Pulseras = () => {
   return (
     <section className={styles.wrapper}>
       <style>
-        {`@media print { @page { size: ${tamano.largoMm}mm ${tamano.altoMm}mm; margin: 0; } }`}
+        {`@media print { @page { size: ${tamano.altoMm}mm ${tamano.largoMm}mm; margin: 0; } }`}
       </style>
 
       <div className={styles.noPrint}>
@@ -329,6 +329,10 @@ const Pulseras = () => {
           <div className={styles.previewFrame}>
             <PulseraPreview datos={datos} tamano={tamano} />
           </div>
+          <p className={styles.hintOrientacion}>
+            La vista previa es horizontal para leerla. En la TD-4410D se imprime vertical
+            (el rollo sale de {tamano.altoMm} mm de ancho).
+          </p>
 
           <div className={styles.accionesPrint}>
             <button type="button" className={styles.btnLimpiar} onClick={limpiar}>
