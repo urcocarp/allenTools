@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Form from './components/Form/Form';
 import IvaCalculator from './components/IvaCalculator/IvaCalculator';
 import Caja from './components/Caja/caja';
+import Pulseras from './components/Pulseras/Pulseras';
 import LearningHub from './components/LearningHub/LearningHub';
 import TablaRegistros from './components/TablaRegistros/TablaRegistros';
 import { saveRegistro, loadRegistros } from './api/registros';
@@ -19,6 +20,7 @@ const HERRAMIENTAS = [
   { id: 'learninghub', label: 'LearningHub', Component: LearningHub },
   { id: 'iva', label: 'Calculadora IVA', Component: IvaCalculator },
   { id: 'caja', label: 'Cierre de caja', Component: Caja },
+  { id: 'pulseras', label: 'Pulseras', Component: Pulseras },
 ];
 
 function App() {
@@ -70,7 +72,7 @@ function App() {
     window.location.hash = `#${id}`;
   };
 
-  // Navegación por hash (#derivacion, #tabla, #learninghub, #iva)
+  // Navegación por hash (#derivacion, #tabla, #learninghub, #iva, #caja, #pulseras)
   useEffect(() => {
     const syncFromHash = () => {
       const hash = window.location.hash.replace('#', '');
