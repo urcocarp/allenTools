@@ -171,7 +171,9 @@ const Pulseras = () => {
   return (
     <section className={styles.wrapper}>
       <style>
-        {`@media print { @page { size: ${tamano.altoMm}mm ${tamano.largoMm}mm; margin: 0; } }`}
+        {`@media print {
+          @page { size: ${tamano.altoMm}mm ${tamano.largoMm}mm; margin: 0 !important; }
+        }`}
       </style>
 
       <div className={styles.noPrint}>
@@ -330,8 +332,9 @@ const Pulseras = () => {
             <PulseraPreview datos={datos} tamano={tamano} />
           </div>
           <p className={styles.hintOrientacion}>
-            La vista previa es horizontal para leerla. En la TD-4410D se imprime vertical
-            (el rollo sale de {tamano.altoMm} mm de ancho).
+            La vista previa es horizontal para leerla. Al imprimir: Márgenes{' '}
+            <strong>Ninguno</strong>, escala 100%. El rollo de la TD-4410D sale vertical
+            ({tamano.altoMm} mm de ancho).
           </p>
 
           <div className={styles.accionesPrint}>
@@ -357,7 +360,23 @@ const Pulseras = () => {
       </div>
 
       <div className={styles.printOnly}>
-        <PulseraPreview datos={datos} tamano={tamano} />
+        <div
+          className={styles.printHoja}
+          style={{
+            width: `${tamano.altoMm}mm`,
+            height: `${tamano.largoMm}mm`,
+          }}
+        >
+          <div
+            className={`${styles.pulsera} ${styles.pulseraPrint}`}
+            style={{
+              width: `${tamano.largoMm}mm`,
+              height: `${tamano.altoMm}mm`,
+            }}
+          >
+            <ModuloPulsera datos={datos} />
+          </div>
+        </div>
       </div>
     </section>
   );
