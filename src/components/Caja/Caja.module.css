@@ -100,7 +100,7 @@
 
 .introGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.75rem;
   margin-bottom: 0.85rem;
 }
@@ -303,6 +303,7 @@
 .tablaHeaderBlue { background: #2563eb; grid-template-columns: 1.4fr 0.8fr 0.8fr 2rem; }
 .tablaHeaderGreen { background: #16a34a; grid-template-columns: 1fr 0.9fr 1fr 0.7fr 0.8fr 2rem; }
 .tablaHeaderOrange { background: #ea580c; grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.8fr 2rem; }
+.tablaHeaderYellow { background: #ca8a04; grid-template-columns: 1.1fr 0.7fr 0.7fr 0.7fr 0.9fr 0.75fr 2rem; }
 .tablaHeaderPurple { background: #7c3aed; grid-template-columns: 1fr 0.9fr 0.9fr 0.8fr 2rem; }
 
 .colAccion {
@@ -333,6 +334,7 @@
 .filaRowGuardia { grid-template-columns: 1.4fr 0.8fr 0.8fr 2rem; }
 .filaRowInternaciones { grid-template-columns: 1fr 0.9fr 1fr 0.7fr 0.8fr 2rem; }
 .filaRowRendicion { grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.8fr 2rem; }
+.filaRowDolares { grid-template-columns: 1.1fr 0.7fr 0.7fr 0.7fr 0.9fr 0.75fr 2rem; }
 .filaRowCheques { grid-template-columns: 1fr 0.9fr 0.9fr 0.8fr 2rem; }
 
 .filaRow input,
@@ -377,17 +379,6 @@
 .btnRemove:hover {
   color: #dc2626;
   background: #fef2f2;
-}
-
-.dolaresGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-}
-
-.dolaresConcepto {
-  grid-column: 1 / 2;
 }
 
 .acordeonFooter {
@@ -630,6 +621,10 @@
   display: none;
 }
 
+.printPieFirma {
+  display: none;
+}
+
 .noPrint {}
 
 @media (max-width: 900px) {
@@ -661,12 +656,9 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .dolaresGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .dolaresConcepto {
-    grid-column: auto;
+  .tablaHeaderYellow,
+  .filaRowDolares {
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
 
@@ -693,6 +685,7 @@
   .wrapper {
     display: flex;
     flex-direction: column;
+    min-height: 270mm;
     padding: 0;
     color: #111;
   }
@@ -729,7 +722,7 @@
 
   .printDatosTurno {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     gap: 0.15rem 0.75rem;
     margin-bottom: 0.45rem;
     font-size: 0.72rem;
@@ -787,6 +780,43 @@
   .printObs p {
     margin: 0.15rem 0 0;
     white-space: pre-wrap;
+  }
+
+  .printPieFirma {
+    display: block;
+    order: 4;
+    margin-top: auto;
+    padding-top: 1.1rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .printFirmaLegajo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    padding: 0 0.35rem 0.15rem;
+  }
+
+  .printFirmaCampo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+  }
+
+  .printFirmaLinea {
+    display: block;
+    width: 100%;
+    border-bottom: 1px solid #111;
+    height: 1.35rem;
+  }
+
+  .printFirmaCampo span:last-child {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #001153;
   }
 
   .resumenGeneral {

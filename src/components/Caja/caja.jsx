@@ -88,7 +88,12 @@ const sumarImportes = (filas, campo = 'importe') =>
   }, 0);
 
 const filasConDatos = (filas, campos) =>
-  filas.filter((f) => campos.some((c) => String(f[c] ?? '').trim()) || parseMonto(f.importe) != null);
+  filas.filter(
+    (f) =>
+      campos.some((c) => String(f[c] ?? '').trim()) ||
+      parseMonto(f.importe) != null ||
+      parseMonto(f.importeUSD) != null,
+  );
 
 const Caja = () => {
   const printTimestampRef = useRef(null);
@@ -96,6 +101,7 @@ const Caja = () => {
   const [nombreApellido, setNombreApellido] = useState('');
   const [fechaTurno, setFechaTurno] = useState(hoyISO);
   const [numeroPrecinto, setNumeroPrecinto] = useState('');
+  const [numeroCierre, setNumeroCierre] = useState('');
   const [turno, setTurno] = useState('');
   const [totalGuardiaSuperior, setTotalGuardiaSuperior] = useState('');
   const [totalDolaresSuperior, setTotalDolaresSuperior] = useState('');
@@ -116,7 +122,7 @@ const Caja = () => {
   const [filasInternaciones, setFilasInternaciones] = useState([{ ...FILA_INTERNACIONES }]);
   const [filasRendicion, setFilasRendicion] = useState([{ ...FILA_RENDICION }]);
   const [filasCheques, setFilasCheques] = useState([{ ...FILA_CHEQUES }]);
-  const [dolares, setDolares] = useState({ ...DOLARES_VACIO });
+  const [filasDolares, setFilasDolares] = useState([{ ...DOLARES_VACIO }]);
 
   const totalGuardiaSuperiorNum = useMemo(
     () => parseMonto(totalGuardiaSuperior) ?? 0,
@@ -150,16 +156,20 @@ const Caja = () => {
   );
 
   const totalDolaresUSD = useMemo(
-    () => parseMonto(dolares.importeUSD) ?? 0,
-    [dolares.importeUSD],
+    () => sumarImportes(filasDolares, 'importeUSD'),
+    [filasDolares],
   );
 
-  const totalDolaresARS = useMemo(() => {
-    const usd = parseMonto(dolares.importeUSD);
-    const cambio = parseMonto(dolares.cambioDelDia);
-    if (usd == null || cambio == null) return 0;
-    return usd * cambio;
-  }, [dolares.importeUSD, dolares.cambioDelDia]);
+  const totalDolaresARS = useMemo(
+    () =>
+      filasDolares.reduce((acc, fila) => {
+        const usd = parseMonto(fila.importeUSD);
+        const cambio = parseMonto(fila.cambioDelDia);
+        if (usd == null || cambio == null) return acc;
+        return acc + usd * cambio;
+      }, 0),
+    [filasDolares],
+  );
 
   const imputadoSobreEfectivo = useMemo(
     () => totalInternaciones + totalRendicion,
@@ -191,13 +201,12 @@ const Caja = () => {
     [totalGuardiaAcordeon, totalCheques],
   );
 
-  // Internación no entra en el total de guardia del sistema: si se cobró
-  // con un ticket, hay que sumarla al esperado para que se cancele.
-  // Rendición varios sí forma parte de esos tickets / de la guardia: no
-  // se vuelve a pedir en la diferencia.
+  // Internación y rendición varios no entran en el total de guardia del
+  // sistema: si se cobraron con un ticket, hay que sumarlos al esperado
+  // para que se cancelen y la diferencia quede en 0.
   const totalEsperadoARS = useMemo(
-    () => totalGuardiaSuperiorNum + totalInternaciones,
-    [totalGuardiaSuperiorNum, totalInternaciones],
+    () => totalGuardiaSuperiorNum + totalInternaciones + totalRendicion,
+    [totalGuardiaSuperiorNum, totalInternaciones, totalRendicion],
   );
 
   const diferencia = useMemo(
@@ -227,14 +236,21 @@ const Caja = () => {
 
   const focusNuevaFilaRef = useRef(null);
 
-  const filaEstaVacia = (fila, camposTexto) =>
+  const filaEstaVacia = (fila, camposTexto, campoImporte = 'importe') =>
     camposTexto.every((c) => !String(fila[c] ?? '').trim()) &&
-    parseMonto(fila.importe) == null;
+    parseMonto(fila[campoImporte]) == null;
 
-  const agregarFilaEnter = (setter, vacio, seccionId, camposTexto, focusAttr) => {
+  const agregarFilaEnter = (
+    setter,
+    vacio,
+    seccionId,
+    camposTexto,
+    focusAttr,
+    campoImporte = 'importe',
+  ) => {
     setter((prev) => {
       const ultima = prev[prev.length - 1];
-      if (ultima && filaEstaVacia(ultima, camposTexto)) return prev;
+      if (ultima && filaEstaVacia(ultima, camposTexto, campoImporte)) return prev;
       return [...prev, { ...vacio }];
     });
     setSeccionesAbiertas((prev) => ({ ...prev, [seccionId]: true }));
@@ -247,7 +263,7 @@ const Caja = () => {
     focusNuevaFilaRef.current = null;
     const inputs = document.querySelectorAll(`[${attr}]`);
     inputs[inputs.length - 1]?.focus();
-  }, [filasGuardia, filasInternaciones, filasRendicion]);
+  }, [filasGuardia, filasInternaciones, filasRendicion, filasDolares]);
 
   const onEnterImporteTicket = (e) => {
     if (e.key !== 'Enter') return;
@@ -285,6 +301,19 @@ const Caja = () => {
     );
   };
 
+  const onEnterImporteDolares = (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    agregarFilaEnter(
+      setFilasDolares,
+      DOLARES_VACIO,
+      'dolares',
+      ['nombreApellido', 'numRecibo', 'nroInternado', 'cambioDelDia', 'concepto'],
+      'data-fila-dolares-nombre',
+      'importeUSD',
+    );
+  };
+
   const removeFila = (setter, vacio, index) => {
     setter((prev) =>
       prev.length <= 1 ? [{ ...vacio }] : prev.filter((_, i) => i !== index),
@@ -295,6 +324,7 @@ const Caja = () => {
     setNombreApellido('');
     setFechaTurno(hoyISO());
     setNumeroPrecinto('');
+    setNumeroCierre('');
     setTurno('');
     setTotalGuardiaSuperior('');
     setTotalDolaresSuperior('');
@@ -304,7 +334,7 @@ const Caja = () => {
     setFilasInternaciones([{ ...FILA_INTERNACIONES }]);
     setFilasRendicion([{ ...FILA_RENDICION }]);
     setFilasCheques([{ ...FILA_CHEQUES }]);
-    setDolares({ ...DOLARES_VACIO });
+    setFilasDolares([{ ...DOLARES_VACIO }]);
     setSeccionesAbiertas({
       guardia: true,
       internaciones: false,
@@ -440,6 +470,25 @@ const Caja = () => {
               placeholder="Ej: 12345"
               value={numeroPrecinto}
               onChange={(e) => setNumeroPrecinto(e.target.value)}
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label htmlFor="numero-cierre">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"
+                />
+              </svg>
+              Nº de cierre
+            </label>
+            <input
+              id="numero-cierre"
+              type="text"
+              inputMode="numeric"
+              placeholder="Ej: 12345"
+              value={numeroCierre}
+              onChange={(e) => setNumeroCierre(e.target.value)}
             />
           </div>
           <div className={styles.inputGroup}>
@@ -853,78 +902,92 @@ const Caja = () => {
           <div
             className={`${styles.acordeonBody} ${seccionesAbiertas.dolares ? styles.acordeonBodyAbierto : ''} ${styles.noPrint}`}
           >
-            <div className={styles.dolaresGrid}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="dol-nombre">Nombre y apellido</label>
-                <input
-                  id="dol-nombre"
-                  type="text"
-                  value={dolares.nombreApellido}
-                  onChange={(e) =>
-                    setDolares((prev) => ({ ...prev, nombreApellido: e.target.value }))
-                  }
-                />
-              </div>
-              <div className={styles.inputGroup}>
-                <label htmlFor="dol-recibo">Nº de recibo</label>
-                <input
-                  id="dol-recibo"
-                  type="text"
-                  value={dolares.numRecibo}
-                  onChange={(e) =>
-                    setDolares((prev) => ({ ...prev, numRecibo: e.target.value }))
-                  }
-                />
-              </div>
-              <div className={styles.inputGroup}>
-                <label htmlFor="dol-internado">Nro de internado</label>
-                <input
-                  id="dol-internado"
-                  type="text"
-                  value={dolares.nroInternado}
-                  onChange={(e) =>
-                    setDolares((prev) => ({ ...prev, nroInternado: e.target.value }))
-                  }
-                />
-              </div>
-              <div className={styles.inputGroup}>
-                <label htmlFor="dol-cambio">Cambio del día</label>
-                <input
-                  id="dol-cambio"
-                  type="text"
-                  inputMode="decimal"
-                  value={dolares.cambioDelDia}
-                  onChange={(e) =>
-                    setDolares((prev) => ({ ...prev, cambioDelDia: e.target.value }))
-                  }
-                />
-              </div>
-              <div className={`${styles.inputGroup} ${styles.dolaresConcepto}`}>
-                <label htmlFor="dol-concepto">Concepto</label>
-                <input
-                  id="dol-concepto"
-                  type="text"
-                  value={dolares.concepto}
-                  onChange={(e) =>
-                    setDolares((prev) => ({ ...prev, concepto: e.target.value }))
-                  }
-                />
-              </div>
-              <div className={styles.inputGroup}>
-                <label htmlFor="dol-importe">Importe (USD)</label>
-                <input
-                  id="dol-importe"
-                  type="text"
-                  inputMode="decimal"
-                  value={dolares.importeUSD}
-                  onChange={(e) =>
-                    setDolares((prev) => ({ ...prev, importeUSD: e.target.value }))
-                  }
-                />
-              </div>
+            <div className={`${styles.tablaHeader} ${styles.tablaHeaderYellow}`}>
+              <span>Nombre y apellido</span>
+              <span>Nº recibo</span>
+              <span>Nro internado</span>
+              <span>Cambio del día</span>
+              <span>Concepto</span>
+              <span>Importe (USD)</span>
+              <span className={styles.colAccion} />
             </div>
+            <ul className={styles.filasList}>
+              {filasDolares.map((fila, index) => (
+                <li key={index} className={`${styles.filaRow} ${styles.filaRowDolares}`}>
+                  <input
+                    type="text"
+                    data-fila-dolares-nombre=""
+                    placeholder="Nombre"
+                    aria-label={`Nombre y apellido dólares fila ${index + 1}`}
+                    value={fila.nombreApellido}
+                    onChange={(e) =>
+                      updateFila(setFilasDolares, index, 'nombreApellido', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    placeholder="Recibo"
+                    aria-label={`Nº de recibo dólares fila ${index + 1}`}
+                    value={fila.numRecibo}
+                    onChange={(e) =>
+                      updateFila(setFilasDolares, index, 'numRecibo', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    placeholder="Internado"
+                    aria-label={`Nro de internado dólares fila ${index + 1}`}
+                    value={fila.nroInternado}
+                    onChange={(e) =>
+                      updateFila(setFilasDolares, index, 'nroInternado', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    aria-label={`Cambio del día dólares fila ${index + 1}`}
+                    value={fila.cambioDelDia}
+                    onChange={(e) =>
+                      updateFila(setFilasDolares, index, 'cambioDelDia', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    placeholder="Concepto"
+                    aria-label={`Concepto dólares fila ${index + 1}`}
+                    value={fila.concepto}
+                    onChange={(e) =>
+                      updateFila(setFilasDolares, index, 'concepto', e.target.value)
+                    }
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    aria-label={`Importe USD fila ${index + 1}`}
+                    value={fila.importeUSD}
+                    onChange={(e) =>
+                      updateFila(setFilasDolares, index, 'importeUSD', e.target.value)
+                    }
+                    className={styles.inputImporte}
+                    onKeyDown={onEnterImporteDolares}
+                  />
+                  {renderBtnRemove(
+                    () => removeFila(setFilasDolares, DOLARES_VACIO, index),
+                    `Quitar fila ${index + 1} dólares`,
+                  )}
+                </li>
+              ))}
+            </ul>
             <div className={styles.acordeonFooter}>
-              <div />
+              <button
+                type="button"
+                className={styles.btnAdd}
+                onClick={() => addFila(setFilasDolares, DOLARES_VACIO, 'dolares')}
+              >
+                + Agregar fila
+              </button>
               <div className={`${styles.totalSeccion} ${styles.totalSeccionYellow}`}>
                 <span>Total (ARS)</span>
                 <strong>{formatPesos(totalDolaresARS)}</strong>
@@ -1159,6 +1222,9 @@ const Caja = () => {
             <strong>Nº de precinto:</strong> {numeroPrecinto || '—'}
           </p>
           <p>
+            <strong>Nº de cierre:</strong> {numeroCierre || '—'}
+          </p>
+          <p>
             <strong>Turno:</strong> {turno || '—'}
           </p>
         </div>
@@ -1277,34 +1343,57 @@ const Caja = () => {
           </table>
         )}
 
-        {(dolares.nombreApellido ||
-          dolares.numRecibo ||
-          dolares.importeUSD ||
-          dolares.cambioDelDia) && (
+        {filasConDatos(filasDolares, [
+          'nombreApellido',
+          'numRecibo',
+          'nroInternado',
+          'cambioDelDia',
+          'concepto',
+        ]).length > 0 && (
           <table className={styles.tablaPrint}>
             <caption>Dólares en Caución</caption>
+            <thead>
+              <tr>
+                <th>Nombre y apellido</th>
+                <th>Nº recibo</th>
+                <th>Nro internado</th>
+                <th>Cambio del día</th>
+                <th>Concepto</th>
+                <th>Importe USD</th>
+                <th>Total ARS</th>
+              </tr>
+            </thead>
             <tbody>
+              {filasConDatos(filasDolares, [
+                'nombreApellido',
+                'numRecibo',
+                'nroInternado',
+                'cambioDelDia',
+                'concepto',
+              ]).map((f, i) => {
+                const usd = parseMonto(f.importeUSD);
+                const cambio = parseMonto(f.cambioDelDia);
+                const ars = usd != null && cambio != null ? usd * cambio : 0;
+                return (
+                  <tr key={i}>
+                    <td>{f.nombreApellido || '—'}</td>
+                    <td>{f.numRecibo || '—'}</td>
+                    <td>{f.nroInternado || '—'}</td>
+                    <td>{formatPesos(cambio)}</td>
+                    <td>{f.concepto || '—'}</td>
+                    <td>{formatUSD(usd ?? 0)}</td>
+                    <td>{formatPesos(ars)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
               <tr>
-                <td>Nombre</td>
-                <td>{dolares.nombreApellido || '—'}</td>
-              </tr>
-              <tr>
-                <td>Nº recibo</td>
-                <td>{dolares.numRecibo || '—'}</td>
-              </tr>
-              <tr>
-                <td>Importe USD</td>
+                <td colSpan={5}>Total</td>
                 <td>{formatUSD(totalDolaresUSD)}</td>
-              </tr>
-              <tr>
-                <td>Cambio del día</td>
-                <td>{formatPesos(parseMonto(dolares.cambioDelDia))}</td>
-              </tr>
-              <tr>
-                <td>Total ARS</td>
                 <td>{formatPesos(totalDolaresARS)}</td>
               </tr>
-            </tbody>
+            </tfoot>
           </table>
         )}
 
@@ -1346,6 +1435,19 @@ const Caja = () => {
             <p>{observaciones}</p>
           </div>
         )}
+      </div>
+
+      <div className={styles.printPieFirma}>
+        <div className={styles.printFirmaLegajo}>
+          <div className={styles.printFirmaCampo}>
+            <span className={styles.printFirmaLinea} />
+            <span>Firma</span>
+          </div>
+          <div className={styles.printFirmaCampo}>
+            <span className={styles.printFirmaLinea} />
+            <span>Legajo</span>
+          </div>
+        </div>
       </div>
     </section>
   );
