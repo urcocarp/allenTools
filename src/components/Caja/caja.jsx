@@ -32,12 +32,53 @@ const DOLARES_VACIO = {
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 
+const parseNumeroUnico = (str) => {
+  const s = String(str).trim();
+  if (!s) return null;
+  const normalized = s.replace(/\./g, '').replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(normalized)) return null;
+  const n = parseFloat(normalized);
+  return Number.isFinite(n) ? n : null;
+};
+
 const parseMonto = (str) => {
   const s = String(str).trim().replace(/\s/g, '');
   if (!s) return null;
-  const normalized = s.replace(/\./g, '').replace(',', '.');
-  const n = parseFloat(normalized);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  if (!/^[0-9.,+\-]+$/.test(s)) return null;
+  const tokens = s.split(/([+-])/).filter((t) => t !== '');
+  let i = 0;
+  let signo = 1;
+  if (tokens[0] === '+' || tokens[0] === '-') {
+    signo = tokens[0] === '-' ? -1 : 1;
+    i = 1;
+  }
+  if (i >= tokens.length) return null;
+  const primero = parseNumeroUnico(tokens[i]);
+  if (primero == null) return null;
+  let total = signo * primero;
+  i += 1;
+  while (i < tokens.length) {
+    const op = tokens[i];
+    const num = parseNumeroUnico(tokens[i + 1]);
+    if ((op !== '+' && op !== '-') || num == null) return null;
+    total = op === '+' ? total + num : total - num;
+    i += 2;
+  }
+  return Number.isFinite(total) && total >= 0 ? total : null;
+};
+
+const formatMontoInput = (n) => {
+  const entero = Math.abs(n - Math.round(n)) < 1e-9;
+  return new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: entero ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+};
+
+const resolverTextoMonto = (valor) => {
+  const n = parseMonto(valor);
+  if (n == null) return valor;
+  return formatMontoInput(n);
 };
 
 const formatPesos = (n) => {
@@ -265,9 +306,27 @@ const Caja = () => {
     inputs[inputs.length - 1]?.focus();
   }, [filasGuardia, filasInternaciones, filasRendicion, filasDolares]);
 
-  const onEnterImporteTicket = (e) => {
+  const resolverImporteFila = (setter, index, campo = 'importe') => {
+    setter((prev) =>
+      prev.map((fila, i) =>
+        i === index ? { ...fila, [campo]: resolverTextoMonto(fila[campo]) } : fila,
+      ),
+    );
+  };
+
+  const onEnterImporteEfectivo = (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
+    setFilaEfectivoDeposito((prev) => ({
+      ...prev,
+      importe: resolverTextoMonto(prev.importe),
+    }));
+  };
+
+  const onEnterImporteTicket = (e, index) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    resolverImporteFila(setFilasGuardia, index);
     agregarFilaEnter(
       setFilasGuardia,
       FILA_GUARDIA,
@@ -277,9 +336,10 @@ const Caja = () => {
     );
   };
 
-  const onEnterImporteInternacion = (e) => {
+  const onEnterImporteInternacion = (e, index) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
+    resolverImporteFila(setFilasInternaciones, index);
     agregarFilaEnter(
       setFilasInternaciones,
       FILA_INTERNACIONES,
@@ -289,9 +349,10 @@ const Caja = () => {
     );
   };
 
-  const onEnterImporteRendicion = (e) => {
+  const onEnterImporteRendicion = (e, index) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
+    resolverImporteFila(setFilasRendicion, index);
     agregarFilaEnter(
       setFilasRendicion,
       FILA_RENDICION,
@@ -301,9 +362,10 @@ const Caja = () => {
     );
   };
 
-  const onEnterImporteDolares = (e) => {
+  const onEnterImporteDolares = (e, index) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
+    resolverImporteFila(setFilasDolares, index, 'importeUSD');
     agregarFilaEnter(
       setFilasDolares,
       DOLARES_VACIO,
@@ -598,7 +660,7 @@ const Caja = () => {
                     }))
                   }
                   className={styles.inputImporte}
-                  onKeyDown={onEnterImporteTicket}
+                  onKeyDown={onEnterImporteEfectivo}
                 />
                 <span className={styles.colAccion} />
               </li>
@@ -631,7 +693,7 @@ const Caja = () => {
                       updateFila(setFilasGuardia, index, 'importe', e.target.value)
                     }
                     className={styles.inputImporte}
-                    onKeyDown={onEnterImporteTicket}
+                    onKeyDown={(e) => onEnterImporteTicket(e, index)}
                   />
                   {renderBtnRemove(
                     () => removeFila(setFilasGuardia, FILA_GUARDIA, index),
@@ -746,7 +808,7 @@ const Caja = () => {
                       updateFila(setFilasInternaciones, index, 'importe', e.target.value)
                     }
                     className={styles.inputImporte}
-                    onKeyDown={onEnterImporteInternacion}
+                    onKeyDown={(e) => onEnterImporteInternacion(e, index)}
                   />
                   {renderBtnRemove(
                     () => removeFila(setFilasInternaciones, FILA_INTERNACIONES, index),
@@ -849,7 +911,7 @@ const Caja = () => {
                       updateFila(setFilasRendicion, index, 'importe', e.target.value)
                     }
                     className={styles.inputImporte}
-                    onKeyDown={onEnterImporteRendicion}
+                    onKeyDown={(e) => onEnterImporteRendicion(e, index)}
                   />
                   {renderBtnRemove(
                     () => removeFila(setFilasRendicion, FILA_RENDICION, index),
@@ -971,7 +1033,7 @@ const Caja = () => {
                       updateFila(setFilasDolares, index, 'importeUSD', e.target.value)
                     }
                     className={styles.inputImporte}
-                    onKeyDown={onEnterImporteDolares}
+                    onKeyDown={(e) => onEnterImporteDolares(e, index)}
                   />
                   {renderBtnRemove(
                     () => removeFila(setFilasDolares, DOLARES_VACIO, index),
