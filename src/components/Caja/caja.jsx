@@ -81,6 +81,15 @@ const resolverTextoMonto = (valor) => {
   return formatMontoInput(n);
 };
 
+const IVA_RENDICION = 21;
+
+const ivaContenido = (importeStr, alicuota = IVA_RENDICION) => {
+  const total = parseMonto(importeStr);
+  if (total == null || total <= 0) return null;
+  const divisor = 1 + alicuota / 100;
+  return total - total / divisor;
+};
+
 const formatPesos = (n) => {
   if (n == null || Number.isNaN(n)) return '$ 0,00';
   return new Intl.NumberFormat('es-AR', {
@@ -440,14 +449,14 @@ const Caja = () => {
       <div className={styles.printHeader}>
         <img src={logo} alt="Sanatorio Allende" className={styles.printLogo} />
         <div>
-          <h2 className={styles.titulo}>Cierre de Caja</h2>
+          <h2 className={styles.titulo}>Cierre de Caja - Emergencias médicas</h2>
           <p className={styles.printTimestamp} ref={printTimestampRef} />
         </div>
       </div>
 
       <div className={`${styles.topBar} ${styles.noPrint}`}>
         <div className={styles.topBarLeft}>
-          <h2 className={styles.tituloPantalla}>Cierre de Caja</h2>
+          <h2 className={styles.tituloPantalla}>Cierre de Caja - Emergencias médicas</h2>
           <span className={styles.badgeActivo}>Turno Activo</span>
         </div>
         <div className={styles.topBarRight}>
@@ -872,7 +881,9 @@ const Caja = () => {
               <span className={styles.colAccion} />
             </div>
             <ul className={styles.filasList}>
-              {filasRendicion.map((fila, index) => (
+              {filasRendicion.map((fila, index) => {
+                const ivaFila = ivaContenido(fila.importe);
+                return (
                 <li key={index} className={`${styles.filaRow} ${styles.filaRowRendicion}`}>
                   <input
                     type="text"
@@ -903,22 +914,30 @@ const Caja = () => {
                       updateFila(setFilasRendicion, index, 'factura', e.target.value)
                     }
                   />
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={fila.importe}
-                    onChange={(e) =>
-                      updateFila(setFilasRendicion, index, 'importe', e.target.value)
-                    }
-                    className={styles.inputImporte}
-                    onKeyDown={(e) => onEnterImporteRendicion(e, index)}
-                  />
+                  <div className={styles.importeConIva}>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={fila.importe}
+                      onChange={(e) =>
+                        updateFila(setFilasRendicion, index, 'importe', e.target.value)
+                      }
+                      className={styles.inputImporte}
+                      onKeyDown={(e) => onEnterImporteRendicion(e, index)}
+                    />
+                    {ivaFila != null && (
+                      <span className={styles.ivaHint}>
+                        IVA {IVA_RENDICION}% {formatPesos(ivaFila)}
+                      </span>
+                    )}
+                  </div>
                   {renderBtnRemove(
                     () => removeFila(setFilasRendicion, FILA_RENDICION, index),
                     `Quitar fila ${index + 1} rendición`,
                   )}
                 </li>
-              ))}
+                );
+              })}
             </ul>
             <div className={styles.acordeonFooter}>
               <button

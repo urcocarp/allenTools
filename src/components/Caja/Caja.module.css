@@ -302,7 +302,7 @@
 
 .tablaHeaderBlue { background: #2563eb; grid-template-columns: 1.4fr 0.8fr 0.8fr 2rem; }
 .tablaHeaderGreen { background: #16a34a; grid-template-columns: 1fr 0.9fr 1fr 0.7fr 0.8fr 2rem; }
-.tablaHeaderOrange { background: #ea580c; grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.8fr 2rem; }
+.tablaHeaderOrange { background: #ea580c; grid-template-columns: 1fr 1fr 0.7fr 0.7fr 1.05fr 2rem; }
 .tablaHeaderYellow { background: #ca8a04; grid-template-columns: 1.1fr 0.7fr 0.7fr 0.7fr 0.9fr 0.75fr 2rem; }
 .tablaHeaderPurple { background: #7c3aed; grid-template-columns: 1fr 0.9fr 0.9fr 0.8fr 2rem; }
 
@@ -333,7 +333,7 @@
 
 .filaRowGuardia { grid-template-columns: 1.4fr 0.8fr 0.8fr 2rem; }
 .filaRowInternaciones { grid-template-columns: 1fr 0.9fr 1fr 0.7fr 0.8fr 2rem; }
-.filaRowRendicion { grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.8fr 2rem; }
+.filaRowRendicion { grid-template-columns: 1fr 1fr 0.7fr 0.7fr 1.05fr 2rem; }
 .filaRowDolares { grid-template-columns: 1.1fr 0.7fr 0.7fr 0.7fr 0.9fr 0.75fr 2rem; }
 .filaRowCheques { grid-template-columns: 1fr 0.9fr 0.9fr 0.8fr 2rem; }
 
@@ -346,6 +346,24 @@
 .inputImporte {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.importeConIva {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.ivaHint {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #c62828;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  padding-right: 0.15rem;
 }
 
 .nombreFijo {
