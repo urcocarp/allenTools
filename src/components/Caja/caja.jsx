@@ -460,6 +460,15 @@ const Caja = () => {
           <span className={styles.badgeActivo}>Turno Activo</span>
         </div>
         <div className={styles.topBarRight}>
+          <button type="button" className={styles.btnLimpiar} onClick={limpiar}>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+              />
+            </svg>
+            Limpiar
+          </button>
           <label className={styles.fechaPicker}>
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
               <path
@@ -474,15 +483,6 @@ const Caja = () => {
               aria-label="Fecha del turno"
             />
           </label>
-          <button type="button" className={styles.btnLimpiar} onClick={limpiar}>
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <path
-                fill="currentColor"
-                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-              />
-            </svg>
-            Limpiar
-          </button>
           <button type="button" className={styles.btnPrint} onClick={handlePrint}>
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
               <path
